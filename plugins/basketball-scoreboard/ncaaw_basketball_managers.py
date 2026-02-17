@@ -241,7 +241,33 @@ class BaseNCAAWBasketballManager(Basketball):
             return self._fetch_todays_games()
         else:
             # Recent/Upcoming modes: Use team schedules for favorite teams
-            return self._fetch_ncaaw_api_data(use_cache=True)
+            data = self._fetch_ncaaw_api_data(use_cache=True)
+
+            # Tournament mode: also fetch scoreboard to pick up non-favorite tournament games
+            if self.tournament_mode:
+                scoreboard_data = self._fetch_todays_games()
+                if scoreboard_data and "events" in scoreboard_data:
+                    existing_ids = set()
+                    if data and "events" in data:
+                        existing_ids = {e.get("id") for e in data["events"]}
+                    elif data is None:
+                        data = {"events": []}
+
+                    for event in scoreboard_data["events"]:
+                        event_id = event.get("id")
+                        if event_id and event_id not in existing_ids:
+                            # Only merge tournament games
+                            comp = event.get("competitions", [{}])[0]
+                            comp_type = comp.get("type", {})
+                            notes = comp.get("notes", [])
+                            is_tourney = comp_type.get("abbreviation") == "TRNMNT"
+                            if not is_tourney and notes:
+                                is_tourney = "Championship" in notes[0].get("headline", "")
+                            if is_tourney:
+                                data["events"].append(event)
+                                existing_ids.add(event_id)
+
+            return data
 
 
 class NCAAWBasketballLiveManager(BaseNCAAWBasketballManager, BasketballLive):

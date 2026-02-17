@@ -56,6 +56,7 @@ class ScrollDisplay:
     NBA_SEPARATOR_ICON = "assets/sports/nba_logos/NBA.png"
     WNBA_SEPARATOR_ICON = "assets/sports/wnba_logos/WNBA.png"
     NCAA_SEPARATOR_ICON = "assets/sports/ncaa_logos/NCAA.png"  # Generic NCAA logo, or use league-specific if available
+    MARCH_MADNESS_SEPARATOR_ICON = "assets/sports/ncaa_logos/MARCH_MADNESS.png"
     
     def __init__(
         self,
@@ -263,6 +264,13 @@ class ScrollDisplay:
         self._load_separator_icon(
             self.NCAA_SEPARATOR_ICON, ["ncaam", "ncaaw"], separator_height, "NCAA"
         )
+        # March Madness tournament separator (used when tournament games are detected)
+        self._load_separator_icon(
+            self.MARCH_MADNESS_SEPARATOR_ICON,
+            ["ncaam_tournament", "ncaaw_tournament"],
+            separator_height,
+            "March Madness",
+        )
     
     def _determine_game_type(self, game: Dict) -> str:
         """
@@ -348,11 +356,18 @@ class ScrollDisplay:
         for game in games:
             game_league = game.get("league", "nba")  # Default to NBA if not specified
 
+            # Use March Madness separator for tournament games
+            separator_key = game_league
+            if game.get("is_tournament") and game_league in ("ncaam", "ncaaw"):
+                tournament_key = f"{game_league}_tournament"
+                if tournament_key in self._separator_icons:
+                    separator_key = tournament_key
+
             # Add league separator if switching leagues OR if this is the first league
             if show_separators:
                 if current_league is None:
                     # First league - add separator at the start
-                    separator = self._separator_icons.get(game_league)
+                    separator = self._separator_icons.get(separator_key)
                     if separator:
                         # Create a separator image with proper background
                         sep_img = Image.new('RGB', (separator.width + 8, self.display_height), (0, 0, 0))
@@ -360,10 +375,10 @@ class ScrollDisplay:
                         y_offset = (self.display_height - separator.height) // 2
                         sep_img.paste(separator, (4, y_offset), separator)
                         content_items.append(sep_img)
-                        self.logger.debug(f"Added {game_league} separator icon at start")
-                elif game_league != current_league:
-                    # Switching leagues - add separator
-                    separator = self._separator_icons.get(game_league)
+                        self.logger.debug(f"Added {separator_key} separator icon at start")
+                elif separator_key != current_league:
+                    # Switching leagues or switching between regular/tournament - add separator
+                    separator = self._separator_icons.get(separator_key)
                     if separator:
                         # Create a separator image with proper background
                         sep_img = Image.new('RGB', (separator.width + 8, self.display_height), (0, 0, 0))
@@ -371,9 +386,9 @@ class ScrollDisplay:
                         y_offset = (self.display_height - separator.height) // 2
                         sep_img.paste(separator, (4, y_offset), separator)
                         content_items.append(sep_img)
-                        self.logger.debug(f"Added {game_league} separator icon")
+                        self.logger.debug(f"Added {separator_key} separator icon")
 
-            current_league = game_league
+            current_league = separator_key
 
             # Render game card - determine type from game state
             try:

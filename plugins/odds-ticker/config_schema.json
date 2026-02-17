@@ -519,6 +519,11 @@
               },
               "uniqueItems": true,
               "maxItems": 350
+            },
+            "show_seeds_in_tournament": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show tournament seeds next to team names during March Madness (e.g., (5) DUKE)"
             }
           },
           "additionalProperties": false

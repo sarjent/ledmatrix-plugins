@@ -190,8 +190,13 @@ class ImageRenderer:
                 
                 self.logger.info(f"Drawing League {league_idx+1} ({league_key}) starting at x={current_x}px")
                 
-                # Draw league logo
-                league_logo = self._get_league_logo(league_config['league_logo'])
+                # Draw league logo (swap to March Madness logo during tournament)
+                league_logo_path = league_config['league_logo']
+                if league_data.get('is_tournament') and league_key in ('ncaam_basketball', 'ncaaw_basketball'):
+                    mm_logo_path = 'assets/sports/ncaa_logos/MARCH_MADNESS.png'
+                    if os.path.exists(mm_logo_path):
+                        league_logo_path = mm_logo_path
+                league_logo = self._get_league_logo(league_logo_path)
                 if league_logo:
                     logo_height = height - 4
                     logo_width = int(logo_height * league_logo.width / league_logo.height)
@@ -263,7 +268,7 @@ class ImageRenderer:
             self.logger.error(f"Error creating leaderboard image: {e}")
             return None
     
-    def _get_number_text(self, league_key: str, league_config: Dict[str, Any], 
+    def _get_number_text(self, league_key: str, league_config: Dict[str, Any],
                          team: Dict[str, Any], index: int) -> str:
         """Get the number/ranking text to display for a team."""
         if league_key == 'ncaa_fb':
@@ -277,6 +282,10 @@ class ImageRenderer:
                     return team['record_summary']
                 else:
                     return f"{index+1}."
+        elif league_key in ('ncaam_basketball', 'ncaaw_basketball'):
+            if league_config.get('show_ranking', True) and team.get('rank', 0) > 0:
+                return f"#{team['rank']}"
+            return f"{index+1}."
         else:
             return f"{index+1}."
 

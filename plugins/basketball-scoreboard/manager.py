@@ -780,6 +780,7 @@ class BasketballScoreboardPlugin(BasePlugin if BasePlugin else object):
                 "show_favorite_teams_only": show_favorites_only,
                 "show_all_live": show_all_live,
                 "filtering": filtering,
+                "march_madness": league_config.get("march_madness", {}),
                 "background_service": {
                     "request_timeout": 30,
                     "max_retries": 3,

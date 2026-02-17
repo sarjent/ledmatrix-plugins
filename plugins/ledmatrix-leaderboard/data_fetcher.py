@@ -7,6 +7,7 @@ Includes caching, error handling, and data processing.
 
 import time
 import logging
+from datetime import datetime, timezone
 import requests
 from typing import Dict, Any, List, Optional
 
@@ -228,8 +229,98 @@ class DataFetcher:
             self.logger.error(f"Error fetching rankings for {league_key}: {e}")
             return []
 
+    @staticmethod
+    def _is_march_madness_window() -> bool:
+        """Check if current date falls within the March Madness tournament window."""
+        today = datetime.now(timezone.utc)
+        month_day = (today.month, today.day)
+        return (3, 10) <= month_day <= (4, 10)
+
+    def _fetch_ncaa_tournament_seeds(self, league_config: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Fetch NCAA tournament seeds from ESPN scoreboard during March Madness."""
+        league_key = league_config['league']
+        cache_key = f"leaderboard_{league_key}_tournament_seeds"
+
+        cached_data = self.cache_manager.get_cached_data_with_strategy(cache_key, 'leaderboard')
+        if cached_data:
+            self.logger.info(f"Using cached tournament seed data for {league_key}")
+            return cached_data.get('standings', [])
+
+        try:
+            sport = league_config['sport']
+            scoreboard_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league_key}/scoreboard?groups=100&limit=1000"
+            self.logger.info(f"Fetching tournament seeds from {scoreboard_url}")
+
+            response = requests.get(scoreboard_url, timeout=self.request_timeout)
+            response.raise_for_status()
+            data = response.json()
+
+            increment_api_counter('sports', 1)
+
+            # Extract unique teams with seeds from all tournament events
+            seen_teams = {}  # team_id -> team dict
+            for event in data.get('events', []):
+                for competition in event.get('competitions', []):
+                    for competitor in competition.get('competitors', []):
+                        team_info = competitor.get('team', {})
+                        team_id = team_info.get('id')
+                        if not team_id or team_id in seen_teams:
+                            continue
+
+                        seed = competitor.get('curatedRank', {}).get('current', 99)
+                        if seed >= 17:
+                            continue  # Not a seeded tournament team
+
+                        team_abbr = team_info.get('abbreviation', 'UNK')
+                        team_name = team_info.get('name', 'Unknown')
+
+                        # Try to get record from competitor
+                        records = competitor.get('records', [])
+                        record_summary = records[0].get('summary', '0-0') if records else '0-0'
+                        wins, losses, ties, win_percentage = self._parse_record(record_summary)
+
+                        seen_teams[team_id] = {
+                            'name': team_name,
+                            'id': team_id,
+                            'abbreviation': team_abbr,
+                            'rank': seed,
+                            'wins': wins,
+                            'losses': losses,
+                            'ties': ties,
+                            'win_percentage': win_percentage,
+                            'record_summary': record_summary,
+                            'is_tournament': True,
+                        }
+
+            standings = sorted(seen_teams.values(), key=lambda t: t['rank'])
+            self.logger.info(f"Extracted {len(standings)} seeded tournament teams for {league_key}")
+
+            cache_data = {
+                'standings': standings,
+                'timestamp': time.time(),
+                'league': league_key,
+                'is_tournament': True,
+            }
+            self.cache_manager.save_cache(cache_key, cache_data)
+
+            return standings
+
+        except Exception as e:
+            self.logger.error(f"Error fetching tournament seeds for {league_key}: {e}")
+            return []
+
     def _fetch_ncaa_basketball_rankings(self, league_config: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Fetch NCAA Basketball rankings from ESPN API using the rankings endpoint."""
+        """Fetch NCAA Basketball rankings from ESPN API using the rankings endpoint.
+
+        During the March Madness tournament window (March 10 - April 10),
+        automatically switches to fetching tournament seeds instead.
+        """
+        if self._is_march_madness_window():
+            seeds = self._fetch_ncaa_tournament_seeds(league_config)
+            if seeds:
+                return seeds
+            self.logger.warning("Tournament seed fetch returned empty, falling back to AP rankings")
+
         league_key = league_config['league']
         cache_key = f"leaderboard_{league_key}_rankings"
 

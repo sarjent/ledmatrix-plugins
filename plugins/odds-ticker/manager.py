@@ -482,7 +482,11 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
                 'enabled': soccer_settings['enabled']
             }
         }
-        
+
+        # Tournament seed display setting
+        ncaam_config = plugin_leagues.get('ncaam_basketball', {})
+        self.show_seeds_in_tournament = ncaam_config.get('show_seeds_in_tournament', True)
+
         # Resolve dynamic teams for each league
         for league_key, league_config in self.league_configs.items():
             if league_config.get('enabled', False):
@@ -1144,6 +1148,25 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
                                 home_name = home_team['team'].get('name', home_abbr)
                                 away_name = away_team['team'].get('name', away_abbr)
 
+                                # Extract tournament metadata (seeds + round)
+                                tournament_round = ""
+                                home_seed = 0
+                                away_seed = 0
+                                competition = event['competitions'][0]
+                                notes = competition.get('notes', [])
+                                for note in notes:
+                                    headline = note.get('headline', '')
+                                    if any(kw in headline for kw in ('Championship', 'Round', 'Sweet', 'Elite', 'Final Four')):
+                                        tournament_round = headline
+                                        break
+                                if tournament_round:
+                                    home_seed = home_team.get('curatedRank', {}).get('current', 0)
+                                    away_seed = away_team.get('curatedRank', {}).get('current', 0)
+                                    if home_seed >= 17:
+                                        home_seed = 0
+                                    if away_seed >= 17:
+                                        away_seed = 0
+
                                 broadcast_info = []
                                 broadcasts = event.get('competitions', [{}])[0].get('broadcasts', [])
                                 if broadcasts:
@@ -1279,7 +1302,10 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
                                     'logo_league': league_config.get('logo_league'),  # For logo downloads (can be None for soccer)
                                     'status': status,
                                     'status_state': status_state,
-                                    'live_info': live_info
+                                    'live_info': live_info,
+                                    'tournament_round': tournament_round,
+                                    'home_seed': home_seed,
+                                    'away_seed': away_seed
                                 }
                                 all_games.append(game)
                                 games_found += 1
@@ -1820,13 +1846,24 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
         
         # Check if this is NCAA football or basketball and fetch rankings
         league_key = game.get('league')  # Use the league field from game dict
-        if league_key in ['ncaa_fb', 'ncaam_basketball']:
+        tournament_round = game.get('tournament_round', '')
+
+        # Tournament seeds override AP rankings display during March Madness
+        if (league_key in ('ncaam_basketball', 'ncaaw_basketball') and
+                self.show_seeds_in_tournament and tournament_round):
+            away_seed = game.get('away_seed', 0)
+            home_seed = game.get('home_seed', 0)
+            if away_seed > 0:
+                away_team_name = f"({away_seed}) {away_team_name}"
+            if home_seed > 0:
+                home_team_name = f"({home_seed}) {home_team_name}"
+        elif league_key in ['ncaa_fb', 'ncaam_basketball']:
             rankings = self._fetch_team_rankings(league_key)
-            
+
             # Add ranking to away team name if ranked
             if away_team_abbr in rankings and rankings[away_team_abbr] > 0:
                 away_team_name = f"{rankings[away_team_abbr]}. {away_team_name}"
-            
+
             # Add ranking to home team name if ranked
             if home_team_abbr in rankings and rankings[home_team_abbr] > 0:
                 home_team_name = f"{rankings[home_team_abbr]}. {home_team_name}"

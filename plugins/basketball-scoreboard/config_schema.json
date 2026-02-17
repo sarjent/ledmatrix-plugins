@@ -696,6 +696,39 @@
             }
           }
         },
+        "march_madness": {
+          "type": "object",
+          "title": "March Madness Settings",
+          "description": "Settings for NCAA Tournament (March Madness) display behavior",
+          "properties": {
+            "tournament_mode": {
+              "type": "boolean",
+              "description": "Show ALL tournament games regardless of favorite teams. If not set, automatically enabled during the tournament window (March 10 - April 10)"
+            },
+            "show_seeds": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show tournament seeds (1-16) instead of AP rankings for tournament games"
+            },
+            "show_round": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show tournament round abbreviation (R64, R32, S16, E8, F4, NCG) in the status area"
+            },
+            "show_region": {
+              "type": "boolean",
+              "default": false,
+              "description": "Show bracket region (E, W, S, MW) alongside round info"
+            },
+            "tournament_games_limit": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 32,
+              "description": "Maximum number of non-favorite tournament games to show in Recent/Upcoming modes"
+            }
+          }
+        },
         "display_durations": {
           "type": "object",
           "description": "How long to display games on screen (in seconds)",
@@ -949,6 +982,39 @@
               "type": "boolean",
               "default": false,
               "description": "Show all live games, not just favorites"
+            }
+          }
+        },
+        "march_madness": {
+          "type": "object",
+          "title": "March Madness Settings",
+          "description": "Settings for NCAA Women's Tournament display behavior",
+          "properties": {
+            "tournament_mode": {
+              "type": "boolean",
+              "description": "Show ALL tournament games regardless of favorite teams. If not set, automatically enabled during the tournament window (March 10 - April 10)"
+            },
+            "show_seeds": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show tournament seeds (1-16) instead of AP rankings for tournament games"
+            },
+            "show_round": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show tournament round abbreviation (R64, R32, S16, E8, F4, NCG) in the status area"
+            },
+            "show_region": {
+              "type": "boolean",
+              "default": false,
+              "description": "Show bracket region alongside round info"
+            },
+            "tournament_games_limit": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 32,
+              "description": "Maximum number of non-favorite tournament games to show in Recent/Upcoming modes"
             }
           }
         },

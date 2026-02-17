@@ -93,6 +93,23 @@ class SportsCore(ABC):
             filtering_config.get("show_all_live", False),
         )
 
+        # March Madness / tournament settings
+        march_madness_config = self.mode_config.get("march_madness", {})
+        self.show_seeds: bool = march_madness_config.get("show_seeds", True)
+        self.show_round: bool = march_madness_config.get("show_round", True)
+        self.show_region: bool = march_madness_config.get("show_region", False)
+        self.tournament_games_limit: int = march_madness_config.get("tournament_games_limit", 10)
+
+        # Tournament mode: auto-enable during March Madness window for NCAA sports.
+        # Users can explicitly set tournament_mode to override the automatic behavior.
+        tournament_mode_override = march_madness_config.get("tournament_mode")
+        if tournament_mode_override is not None:
+            self.tournament_mode: bool = tournament_mode_override
+        elif self.sport_key in ("ncaam", "ncaaw"):
+            self.tournament_mode = self._is_march_madness_window()
+        else:
+            self.tournament_mode = False
+
         self.session = requests.Session()
         retry_strategy = Retry(
             total=5,  # increased number of retries
@@ -749,6 +766,71 @@ class SportsCore(ABC):
 
         return ""
 
+    @staticmethod
+    def _is_march_madness_window() -> bool:
+        """Check if the current date falls within the NCAA tournament window.
+
+        The men's tournament typically runs from Selection Sunday (mid-March)
+        through the championship game (first Monday in April). The women's
+        tournament runs on a similar schedule ending a day later.
+
+        We use a generous window (March 10 – April 10) to cover First Four,
+        Selection Sunday, and any scheduling variance year-to-year.
+        """
+        today = datetime.now(pytz.utc)
+        month_day = (today.month, today.day)
+        return (3, 10) <= month_day <= (4, 10)
+
+    @staticmethod
+    def _parse_tournament_round(headline: str) -> str:
+        """Parse tournament round abbreviation from ESPN notes headline.
+
+        ESPN formats:
+          Men's: "Men's Basketball Championship - {Region} Region - {Round}"
+          Women's: "NCAA Women's Championship - ... - {Round}"
+          Final Four: "... - Final Four"
+          Championship: "... - National Championship"
+        """
+        headline_lower = headline.lower()
+
+        if "national championship" in headline_lower:
+            return "NCG"
+        if "final four" in headline_lower:
+            return "F4"
+        if "elite 8" in headline_lower or "elite eight" in headline_lower:
+            return "E8"
+        if "sweet 16" in headline_lower or "sweet sixteen" in headline_lower:
+            return "S16"
+        if "2nd round" in headline_lower or "second round" in headline_lower:
+            return "R32"
+        if "1st round" in headline_lower or "first round" in headline_lower:
+            return "R64"
+
+        return ""
+
+    @staticmethod
+    def _parse_tournament_region(headline: str) -> str:
+        """Parse tournament region abbreviation from ESPN notes headline.
+
+        Returns short abbreviation: E, W, S, MW, or "" for Final Four/NCG.
+        Women's tournament uses numbered regionals (R1, R2, etc.).
+        """
+        if "East Region" in headline:
+            return "E"
+        if "West Region" in headline:
+            return "W"
+        if "South Region" in headline:
+            return "S"
+        if "Midwest Region" in headline:
+            return "MW"
+
+        # Women's format: "... - Regional 1 in City - ..."
+        match = re.search(r"Regional (\d+)", headline)
+        if match:
+            return f"R{match.group(1)}"
+
+        return ""
+
     def _extract_game_details_common(
         self, game_event: Dict
     ) -> tuple[Dict | None, Dict | None, Dict | None, Dict | None, Dict | None]:
@@ -968,6 +1050,44 @@ class SportsCore(ABC):
                 "away_logo_url": away_logo_url,
                 "is_within_window": True,  # Whether game is within display window
             }
+
+            # --- Tournament metadata extraction (March Madness) ---
+            competition_type = competition.get("type", {})
+            is_tournament = competition_type.get("abbreviation") == "TRNMNT"
+
+            # Also detect via notes headline as fallback
+            notes = competition.get("notes", [])
+            tournament_headline = ""
+            tournament_round = ""
+            tournament_region = ""
+            if notes:
+                headline = notes[0].get("headline", "")
+                if "Championship" in headline:
+                    is_tournament = True
+                    tournament_headline = headline
+                    tournament_round = self._parse_tournament_round(headline)
+                    tournament_region = self._parse_tournament_region(headline)
+
+            # Extract seed from curatedRank during tournament
+            home_seed = 0
+            away_seed = 0
+            if is_tournament:
+                home_seed = home_team.get("curatedRank", {}).get("current", 0)
+                away_seed = away_team.get("curatedRank", {}).get("current", 0)
+                # curatedRank of 99 means unranked/no seed
+                if home_seed >= 99:
+                    home_seed = 0
+                if away_seed >= 99:
+                    away_seed = 0
+
+            details.update({
+                "is_tournament": is_tournament,
+                "tournament_round": tournament_round,
+                "tournament_region": tournament_region,
+                "home_seed": home_seed,
+                "away_seed": away_seed,
+            })
+
             return details, home_team, away_team, status, situation
         except Exception as e:
             # Log the problematic event structure if possible
@@ -1232,12 +1352,14 @@ class SportsUpcoming(SportsCore):
                 if game and game["is_upcoming"]:
                     # Only fetch odds for games that will be displayed
                     # If show_favorite_teams_only is True but no favorites configured, show all
+                    # Tournament mode bypasses favorite filtering for tournament games
                     if self.show_favorite_teams_only and self.favorite_teams:
                         if (
                             game["home_abbr"] not in self.favorite_teams
                             and game["away_abbr"] not in self.favorite_teams
                         ):
-                            continue
+                            if not (self.tournament_mode and game.get("is_tournament")):
+                                continue
                     processed_games.append(game)
                     # Count favorite team games for logging
                     if self.favorite_teams and (
@@ -1272,6 +1394,31 @@ class SportsUpcoming(SportsCore):
                 team_games = self._select_games_for_display(
                     processed_games, self.favorite_teams
                 )
+                # Tournament mode: merge non-favorite tournament games (capped)
+                if self.tournament_mode:
+                    existing_ids = {g.get("id") for g in team_games}
+                    tourney_extras = [
+                        g for g in processed_games
+                        if g.get("is_tournament")
+                        and g.get("id") not in existing_ids
+                    ]
+                    # Sort soonest-first, cap to limit
+                    tourney_extras.sort(
+                        key=lambda g: g.get("start_time_utc")
+                        or datetime.max.replace(tzinfo=timezone.utc)
+                    )
+                    tourney_extras = tourney_extras[:self.tournament_games_limit]
+                    if tourney_extras:
+                        team_games.extend(tourney_extras)
+                        # Re-sort combined list by start time
+                        team_games.sort(
+                            key=lambda g: g.get("start_time_utc")
+                            or datetime.max.replace(tzinfo=timezone.utc)
+                        )
+                        self.logger.info(
+                            f"Added {len(tourney_extras)} tournament games "
+                            f"(limit: {self.tournament_games_limit})"
+                        )
             else:
                 # No favorite teams: show N total games sorted by time (schedule view)
                 team_games = sorted(
@@ -1425,11 +1572,16 @@ class SportsUpcoming(SportsCore):
 
             # Note: Rankings are now handled in the records/rankings section below
 
-            # "Next Game" at the top (use smaller status font) with layout offsets
+            # Status text at the top - tournament round or "Next Game"
             status_font = self.fonts["status"]
             if display_width > 128:
                 status_font = self.fonts["time"]
-            status_text = "Next Game"
+            if self.show_round and game.get("is_tournament") and game.get("tournament_round"):
+                status_text = game["tournament_round"]
+                if self.show_region and game.get("tournament_region"):
+                    status_text = f"{status_text} {game['tournament_region']}"
+            else:
+                status_text = "Next Game"
             status_width = draw_overlay.textlength(status_text, font=status_font)
             status_x = (display_width - status_width) // 2 + self._get_layout_offset('status', 'x_offset')
             status_y = 1 + self._get_layout_offset('status', 'y_offset')
@@ -1460,8 +1612,11 @@ class SportsUpcoming(SportsCore):
                     draw_overlay, game["odds"], display_width, display_height
                 )
 
-            # Draw records or rankings if enabled
-            if self.show_records or self.show_ranking:
+            # Draw records, rankings, or tournament seeds if enabled
+            is_tourney = game.get("is_tournament", False)
+            show_seeds = is_tourney and self.show_seeds
+
+            if self.show_records or self.show_ranking or show_seeds:
                 try:
                     record_font = ImageFont.truetype("assets/fonts/4x6-font.ttf", 6)
                     self.logger.debug(f"Loaded 6px record font successfully")
@@ -1484,15 +1639,16 @@ class SportsUpcoming(SportsCore):
 
                 # Display away team info
                 if away_abbr:
-                    if self.show_ranking and self.show_records:
-                        # Rankings take priority, fall back to record for unranked teams
+                    # Tournament seeds take priority over AP rankings
+                    if show_seeds and game.get("away_seed", 0) > 0:
+                        away_text = f"({game['away_seed']})"
+                    elif self.show_ranking and self.show_records:
                         away_rank = self._team_rankings_cache.get(away_abbr, 0)
                         if away_rank > 0:
                             away_text = f"#{away_rank}"
                         else:
                             away_text = game.get("away_record", "")
                     elif self.show_ranking:
-                        # Show ranking only if available
                         away_rank = self._team_rankings_cache.get(away_abbr, 0)
                         if away_rank > 0:
                             away_text = f"#{away_rank}"
@@ -1517,15 +1673,16 @@ class SportsUpcoming(SportsCore):
 
                 # Display home team info
                 if home_abbr:
-                    if self.show_ranking and self.show_records:
-                        # Rankings take priority, fall back to record for unranked teams
+                    # Tournament seeds take priority over AP rankings
+                    if show_seeds and game.get("home_seed", 0) > 0:
+                        home_text = f"({game['home_seed']})"
+                    elif self.show_ranking and self.show_records:
                         home_rank = self._team_rankings_cache.get(home_abbr, 0)
                         if home_rank > 0:
                             home_text = f"#{home_rank}"
                         else:
                             home_text = game.get("home_record", "")
                     elif self.show_ranking:
-                        # Show ranking only if available
                         home_rank = self._team_rankings_cache.get(home_abbr, 0)
                         if home_rank > 0:
                             home_text = f"#{home_rank}"
@@ -1805,10 +1962,45 @@ class SportsRecent(SportsCore):
                         processed_games.append(game)
             # Use single-pass algorithm for game selection
             # This properly handles games between two favorite teams (counts for both)
+            # Tournament mode: split tournament games out, combine after selection
+            tournament_games = []
+            if self.tournament_mode:
+                tournament_games = [g for g in processed_games if g.get("is_tournament")]
+
             if self.show_favorite_teams_only and self.favorite_teams:
                 team_games = self._select_recent_games_for_display(
                     processed_games, self.favorite_teams
                 )
+                # Add tournament games that weren't already selected (tournament mode bypass)
+                if tournament_games:
+                    existing_ids = {g.get("id") for g in team_games}
+                    tourney_extras = [
+                        tg for tg in tournament_games
+                        if tg.get("id") not in existing_ids
+                    ]
+                    # Sort by round significance (most important round first), then most recent
+                    round_order = {"NCG": 0, "F4": 1, "E8": 2, "S16": 3, "R32": 4, "R64": 5, "": 6}
+                    tourney_extras.sort(
+                        key=lambda g: (
+                            round_order.get(g.get("tournament_round", ""), 6),
+                            -(g.get("start_time_utc") or datetime.min.replace(tzinfo=pytz.utc)).timestamp(),
+                        )
+                    )
+                    # Cap to limit
+                    tourney_extras = tourney_extras[:self.tournament_games_limit]
+                    if tourney_extras:
+                        team_games.extend(tourney_extras)
+                        self.logger.info(
+                            f"Added {len(tourney_extras)} tournament games "
+                            f"(limit: {self.tournament_games_limit})"
+                        )
+                    # Re-sort combined list by round significance, then most recent
+                    team_games.sort(
+                        key=lambda g: (
+                            round_order.get(g.get("tournament_round", ""), 6),
+                            -(g.get("start_time_utc") or datetime.min.replace(tzinfo=pytz.utc)).timestamp(),
+                        )
+                    )
                 # Debug: Show which games are selected for display
                 for i, game in enumerate(team_games):
                     self.logger.info(
@@ -2007,9 +2199,12 @@ class SportsRecent(SportsCore):
             )
 
             # "Final" text (Top center) with layout offsets
+            # Prepend tournament round for March Madness games
             status_text = game.get(
                 "period_text", "Final"
             )  # Use formatted period text (e.g., "Final/OT") or default "Final"
+            if self.show_round and game.get("is_tournament") and game.get("tournament_round"):
+                status_text = f"{game['tournament_round']} {status_text}"
             status_width = draw_overlay.textlength(status_text, font=self.fonts["time"])
             status_x = (display_width - status_width) // 2 + self._get_layout_offset('status', 'x_offset')
             status_y = 1 + self._get_layout_offset('status', 'y_offset')
@@ -2017,14 +2212,29 @@ class SportsRecent(SportsCore):
                 draw_overlay, status_text, (status_x, status_y), self.fonts["time"]
             )
 
+            # Show game date for tournament games (helps distinguish games from different days/rounds)
+            if game.get("is_tournament") and game.get("game_date"):
+                try:
+                    date_font = ImageFont.truetype("assets/fonts/4x6-font.ttf", 6)
+                except IOError:
+                    date_font = ImageFont.load_default()
+                date_text = game["game_date"]
+                date_width = draw_overlay.textlength(date_text, font=date_font)
+                date_x = (display_width - date_width) // 2 + self._get_layout_offset('status', 'x_offset')
+                date_y = 10 + self._get_layout_offset('status', 'y_offset')
+                self._draw_text_with_outline(draw_overlay, date_text, (date_x, date_y), date_font)
+
             # Draw odds if available
             if "odds" in game and game["odds"]:
                 self._draw_dynamic_odds(
                     draw_overlay, game["odds"], display_width, display_height
                 )
 
-            # Draw records or rankings if enabled
-            if self.show_records or self.show_ranking:
+            # Draw records, rankings, or tournament seeds if enabled
+            is_tourney = game.get("is_tournament", False)
+            show_seeds = is_tourney and self.show_seeds
+
+            if self.show_records or self.show_ranking or show_seeds:
                 try:
                     record_font = ImageFont.truetype("assets/fonts/4x6-font.ttf", 6)
                     self.logger.debug(f"Loaded 6px record font successfully")
@@ -2047,15 +2257,16 @@ class SportsRecent(SportsCore):
 
                 # Display away team info
                 if away_abbr:
-                    if self.show_ranking and self.show_records:
-                        # Rankings take priority, fall back to record for unranked teams
+                    # Tournament seeds take priority over AP rankings
+                    if show_seeds and game.get("away_seed", 0) > 0:
+                        away_text = f"({game['away_seed']})"
+                    elif self.show_ranking and self.show_records:
                         away_rank = self._team_rankings_cache.get(away_abbr, 0)
                         if away_rank > 0:
                             away_text = f"#{away_rank}"
                         else:
                             away_text = game.get("away_record", "")
                     elif self.show_ranking:
-                        # Show ranking only if available
                         away_rank = self._team_rankings_cache.get(away_abbr, 0)
                         if away_rank > 0:
                             away_text = f"#{away_rank}"
@@ -2080,15 +2291,16 @@ class SportsRecent(SportsCore):
 
                 # Display home team info
                 if home_abbr:
-                    if self.show_ranking and self.show_records:
-                        # Rankings take priority, fall back to record for unranked teams
+                    # Tournament seeds take priority over AP rankings
+                    if show_seeds and game.get("home_seed", 0) > 0:
+                        home_text = f"({game['home_seed']})"
+                    elif self.show_ranking and self.show_records:
                         home_rank = self._team_rankings_cache.get(home_abbr, 0)
                         if home_rank > 0:
                             home_text = f"#{home_rank}"
                         else:
                             home_text = game.get("home_record", "")
                     elif self.show_ranking:
-                        # Show ranking only if available
                         home_rank = self._team_rankings_cache.get(home_abbr, 0)
                         if home_rank > 0:
                             home_text = f"#{home_rank}"
@@ -2373,12 +2585,16 @@ class SportsLive(SportsCore):
                             if details["is_live"] or details["is_halftime"]:
                                 live_or_halftime_count += 1
 
-                                # Filtering logic matching SportsUpcoming:
+                                # Filtering logic:
+                                # - Tournament mode + tournament game → always show
                                 # - If show_all_live = True → show all games
                                 # - If show_favorite_teams_only = False → show all games
                                 # - If show_favorite_teams_only = True but favorite_teams is empty → show all games (fallback)
                                 # - If show_favorite_teams_only = True and favorite_teams has teams → only show games with those teams
-                                if self.show_all_live:
+                                if self.tournament_mode and details.get("is_tournament"):
+                                    # Tournament mode: show ALL tournament games
+                                    should_include = True
+                                elif self.show_all_live:
                                     # Always show all live games if show_all_live is enabled
                                     should_include = True
                                 elif not self.show_favorite_teams_only:

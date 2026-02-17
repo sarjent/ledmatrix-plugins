@@ -191,6 +191,14 @@ class BasketballLive(Basketball, SportsLive):
             elif game.get("is_period_break"):
                 period_clock_text = game.get("status_text", "Period Break")
 
+            # Prepend tournament round for March Madness games
+            if self.show_round and game.get("is_tournament") and game.get("tournament_round"):
+                round_text = game["tournament_round"]
+                candidate = f"{round_text} {period_clock_text}"
+                candidate_width = draw_overlay.textlength(candidate, font=self.fonts['time'])
+                if candidate_width <= display_width - 40:
+                    period_clock_text = candidate
+
             status_width = draw_overlay.textlength(period_clock_text, font=self.fonts['time'])
             status_x = (display_width - status_width) // 2
             status_y = 1
@@ -267,19 +275,22 @@ class BasketballLive(Basketball, SportsLive):
             if 'odds' in game and game['odds']:
                 self._draw_dynamic_odds(draw_overlay, game['odds'], display_width, display_height)
 
-            # Draw records or rankings if enabled
-            if self.show_records or self.show_ranking:
+            # Draw records, rankings, or tournament seeds if enabled
+            is_tourney = game.get("is_tournament", False)
+            show_seeds = is_tourney and self.show_seeds
+
+            if self.show_records or self.show_ranking or show_seeds:
                 try:
                     record_font = ImageFont.truetype("assets/fonts/4x6-font.ttf", 6)
                     self.logger.debug(f"Loaded 6px record font successfully")
                 except IOError:
                     record_font = ImageFont.load_default()
                     self.logger.warning(f"Failed to load 6px font, using default font (size: {record_font.size})")
-                
+
                 # Get team abbreviations
                 away_abbr = game.get('away_abbr', '')
                 home_abbr = game.get('home_abbr', '')
-                
+
                 record_bbox = draw_overlay.textbbox((0, 0), "0-0", font=record_font)
                 record_height = record_bbox[3] - record_bbox[1]
                 record_y = display_height - record_height - 1
@@ -287,8 +298,10 @@ class BasketballLive(Basketball, SportsLive):
 
                 # Display away team info
                 if away_abbr:
-                    if self.show_ranking and self.show_records:
-                        # Rankings take priority, fall back to record for unranked teams
+                    # Tournament seeds take priority over AP rankings
+                    if show_seeds and game.get("away_seed", 0) > 0:
+                        away_text = f"({game['away_seed']})"
+                    elif self.show_ranking and self.show_records:
                         away_rank = self._team_rankings_cache.get(away_abbr, 0)
                         if away_rank > 0:
                             away_text = f"#{away_rank}"
@@ -312,8 +325,10 @@ class BasketballLive(Basketball, SportsLive):
 
                 # Display home team info
                 if home_abbr:
-                    if self.show_ranking and self.show_records:
-                        # Rankings take priority, fall back to record for unranked teams
+                    # Tournament seeds take priority over AP rankings
+                    if show_seeds and game.get("home_seed", 0) > 0:
+                        home_text = f"({game['home_seed']})"
+                    elif self.show_ranking and self.show_records:
                         home_rank = self._team_rankings_cache.get(home_abbr, 0)
                         if home_rank > 0:
                             home_text = f"#{home_rank}"
@@ -329,7 +344,7 @@ class BasketballLive(Basketball, SportsLive):
                         home_text = game.get('home_record', '')
                     else:
                         home_text = ''
-                    
+
                     if home_text:
                         home_record_bbox = draw_overlay.textbbox((0, 0), home_text, font=record_font)
                         home_record_width = home_record_bbox[2] - home_record_bbox[0]

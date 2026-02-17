@@ -321,6 +321,11 @@
               "minimum": 5,
               "maximum": 350,
               "description": "Number of top NCAA Men's Basketball teams to display"
+            },
+            "show_ranking": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show rankings/seeds instead of sequential numbering. During March Madness, automatically shows tournament seeds."
             }
           },
           "additionalProperties": false

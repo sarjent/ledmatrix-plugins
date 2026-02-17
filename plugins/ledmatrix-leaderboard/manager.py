@@ -228,11 +228,15 @@ class LeaderboardPlugin(BasePlugin):
                 standings = self.data_fetcher.fetch_standings(league_config)
                 
                 if standings:
-                    self.leaderboard_data.append({
+                    league_entry = {
                         'league': league_key,
                         'league_config': league_config,
                         'teams': standings
-                    })
+                    }
+                    # Detect tournament data (teams have is_tournament flag from seed fetcher)
+                    if any(t.get('is_tournament') for t in standings):
+                        league_entry['is_tournament'] = True
+                    self.leaderboard_data.append(league_entry)
                     self.logger.info(f"Successfully fetched {len(standings)} teams for {league_key}")
                 else:
                     self.logger.warning(f"No standings data returned for {league_key}")
