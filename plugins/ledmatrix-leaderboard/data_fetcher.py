@@ -306,7 +306,7 @@ class DataFetcher:
             return standings
 
         except Exception as e:
-            self.logger.error(f"Error fetching tournament seeds for {league_key}: {e}")
+            self.logger.exception(f"Error fetching tournament seeds for {league_key}: {e}")
             return []
 
     def _fetch_ncaa_basketball_rankings(self, league_config: Dict[str, Any]) -> List[Dict[str, Any]]:

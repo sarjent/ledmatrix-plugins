@@ -250,7 +250,7 @@ class BaseNCAAWBasketballManager(Basketball):
                     existing_ids = set()
                     if data and "events" in data:
                         existing_ids = {e.get("id") for e in data["events"]}
-                    elif not data or "events" not in data:
+                    else:
                         data = {"events": []}
 
                     for event in scoreboard_data["events"]:

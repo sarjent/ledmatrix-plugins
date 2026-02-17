@@ -71,9 +71,8 @@ class GameRenderer:
         # Enable if ANY enabled league has the option enabled
         self.show_records = False
         self.show_ranking = False
-        self.show_seeds = True
-        self.show_round = True
-        self.show_region = False
+        # Per-league March Madness settings (ncaam/ncaaw can differ)
+        self._march_madness_by_league: Dict[str, Dict[str, bool]] = {}
         for league_key in ('nba', 'wnba', 'ncaam', 'ncaaw'):
             league_config = config.get(league_key, {})
             if league_config.get('enabled', False):
@@ -83,15 +82,28 @@ class GameRenderer:
                 if display_options.get('show_ranking', False):
                     self.show_ranking = True
                 # March Madness settings from NCAA leagues
-                march_madness = league_config.get('march_madness', {})
                 if league_key in ('ncaam', 'ncaaw'):
-                    self.show_seeds = march_madness.get('show_seeds', True)
-                    self.show_round = march_madness.get('show_round', True)
-                    self.show_region = march_madness.get('show_region', False)
+                    march_madness = league_config.get('march_madness', {})
+                    self._march_madness_by_league[league_key] = {
+                        'show_seeds': march_madness.get('show_seeds', True),
+                        'show_round': march_madness.get('show_round', True),
+                        'show_region': march_madness.get('show_region', False),
+                    }
 
         # Rankings cache (populated externally)
         self._team_rankings_cache: Dict[str, int] = {}
-        
+
+    def _get_mm_setting(self, game: Dict, setting: str, default: bool = True) -> bool:
+        """Look up a per-league March Madness setting for a game."""
+        league = game.get('league', '')
+        mm = self._march_madness_by_league.get(league)
+        if mm is not None:
+            return mm.get(setting, default)
+        # Fallback: check any NCAA league that has settings
+        for mm in self._march_madness_by_league.values():
+            return mm.get(setting, default)
+        return default
+
     def _load_fonts(self) -> Dict[str, ImageFont.FreeTypeFont]:
         """Load fonts used by the scoreboard from config or use defaults."""
         fonts = {}
@@ -352,7 +364,7 @@ class GameRenderer:
             self._draw_upcoming_game_status(draw_overlay, game)
         
         # Draw records, rankings, or tournament seeds if enabled
-        show_tourney_seeds = game.get("is_tournament", False) and self.show_seeds
+        show_tourney_seeds = game.get("is_tournament", False) and self._get_mm_setting(game, 'show_seeds')
         if self.show_records or self.show_ranking or show_tourney_seeds:
             self._draw_records_or_rankings(draw_overlay, game)
         
@@ -374,7 +386,7 @@ class GameRenderer:
             period_clock_text = game.get('status_text', '')
 
         # Prepend tournament round for March Madness games
-        if self.show_round and game.get("is_tournament") and game.get("tournament_round"):
+        if self._get_mm_setting(game, 'show_round') and game.get("is_tournament") and game.get("tournament_round"):
             candidate = f"{game['tournament_round']} {period_clock_text}"
             candidate_width = draw.textlength(candidate, font=self.fonts['time'])
             if candidate_width <= self.display_width - 40:
@@ -389,7 +401,7 @@ class GameRenderer:
         """Draw status elements for a recently completed basketball game."""
         # Final status (Top center) - prepend round for tournament games
         status_text = game.get("period_text", "Final")
-        if self.show_round and game.get("is_tournament") and game.get("tournament_round"):
+        if self._get_mm_setting(game, 'show_round') and game.get("is_tournament") and game.get("tournament_round"):
             candidate = f"{game['tournament_round']} {status_text}"
             if draw.textlength(candidate, font=self.fonts['time']) <= self.display_width - 4:
                 status_text = candidate
@@ -409,9 +421,9 @@ class GameRenderer:
     def _draw_upcoming_game_status(self, draw: ImageDraw.Draw, game: Dict) -> None:
         """Draw status elements for an upcoming basketball game."""
         # Status text - tournament round or "Next Game"
-        if self.show_round and game.get("is_tournament") and game.get("tournament_round"):
+        if self._get_mm_setting(game, 'show_round') and game.get("is_tournament") and game.get("tournament_round"):
             status_text = game["tournament_round"]
-            if self.show_region and game.get("tournament_region"):
+            if self._get_mm_setting(game, 'show_region', False) and game.get("tournament_region"):
                 status_text = f"{status_text} {game['tournament_region']}"
         else:
             status_text = "Next Game"
@@ -543,7 +555,7 @@ class GameRenderer:
     def _get_team_display_text(self, abbr: str, record: str, game: Optional[Dict] = None, side: str = "") -> str:
         """Get the display text for a team (seed, ranking, or record)."""
         # Tournament seeds take priority over AP rankings
-        if game and game.get("is_tournament") and self.show_seeds:
+        if game and game.get("is_tournament") and self._get_mm_setting(game, 'show_seeds'):
             seed = game.get(f"{side}_seed", 0)
             if seed > 0:
                 return f"({seed})"

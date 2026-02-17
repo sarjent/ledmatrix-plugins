@@ -1058,7 +1058,6 @@ class SportsCore(ABC):
 
             # Also detect via notes headline as fallback
             notes = competition.get("notes", [])
-            tournament_headline = ""
             tournament_round = ""
             tournament_region = ""
             if notes:
@@ -1067,7 +1066,6 @@ class SportsCore(ABC):
                     is_tournament = True
                 # Parse round/region from notes for all tournament games
                 if is_tournament and headline:
-                    tournament_headline = headline
                     tournament_round = self._parse_tournament_round(headline)
                     tournament_region = self._parse_tournament_region(headline)
 
@@ -2556,7 +2554,7 @@ class SportsLive(SportsCore):
                 self.logger.debug(f"No data returned from _fetch_data() for {self.sport_key}")
             elif "events" not in data:
                 self.logger.debug(f"Data returned but no 'events' key for {self.sport_key}: {list(data.keys()) if isinstance(data, dict) else type(data)}")
-            elif data and "events" in data:
+            else:
                 total_events = len(data["events"])
                 self.logger.debug(f"Fetched {total_events} total events from API for {self.sport_key}")
                     

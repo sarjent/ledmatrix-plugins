@@ -1855,6 +1855,7 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
         tournament_round = game.get('tournament_round', '')
 
         # Tournament seeds override AP rankings display during March Madness
+        # ncaaw_basketball included for forward-compatibility when women's odds are added
         if (league_key in ('ncaam_basketball', 'ncaaw_basketball') and
                 self.show_seeds_in_tournament and tournament_round):
             away_seed = game.get('away_seed', 0)

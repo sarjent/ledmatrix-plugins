@@ -28,7 +28,9 @@ except ImportError:
 
 class ImageRenderer:
     """Handles image creation and rendering for leaderboard display."""
-    
+
+    MARCH_MADNESS_LOGO_PATH = 'assets/sports/ncaa_logos/MARCH_MADNESS.png'
+
     def __init__(self, display_height: int, logger: Optional[logging.Logger] = None):
         """
         Initialize image renderer.
@@ -193,9 +195,8 @@ class ImageRenderer:
                 # Draw league logo (swap to March Madness logo during tournament)
                 league_logo_path = league_config['league_logo']
                 if league_data.get('is_tournament') and league_key in ('ncaam_basketball', 'ncaaw_basketball'):
-                    mm_logo_path = 'assets/sports/ncaa_logos/MARCH_MADNESS.png'
-                    if os.path.exists(mm_logo_path):
-                        league_logo_path = mm_logo_path
+                    if os.path.exists(self.MARCH_MADNESS_LOGO_PATH):
+                        league_logo_path = self.MARCH_MADNESS_LOGO_PATH
                 league_logo = self._get_league_logo(league_logo_path)
                 if league_logo:
                     logo_height = height - 4
