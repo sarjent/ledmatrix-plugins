@@ -1160,8 +1160,14 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
                                         tournament_round = headline
                                         break
                                 if tournament_round:
-                                    home_seed = home_team.get('curatedRank', {}).get('current', 0)
-                                    away_seed = away_team.get('curatedRank', {}).get('current', 0)
+                                    try:
+                                        home_seed = int(home_team.get('curatedRank', {}).get('current', 0) or 0)
+                                    except (TypeError, ValueError):
+                                        home_seed = 0
+                                    try:
+                                        away_seed = int(away_team.get('curatedRank', {}).get('current', 0) or 0)
+                                    except (TypeError, ValueError):
+                                        away_seed = 0
                                     if home_seed >= 17:
                                         home_seed = 0
                                     if away_seed >= 17:
@@ -2367,6 +2373,11 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
                 "Dynamic duration %s for odds-ticker plugin",
                 "enabled" if new_enabled else "disabled"
             )
+
+        # Update tournament seed display setting
+        plugin_leagues = new_config.get('leagues', {})
+        ncaam_config = plugin_leagues.get('ncaam_basketball', {})
+        self.show_seeds_in_tournament = ncaam_config.get('show_seeds_in_tournament', True)
 
         # Update dynamic duration settings from config (support both old and new structure)
         self.dynamic_duration_enabled = self._get_config_value(display_options, 'dynamic_duration', True, new_config)

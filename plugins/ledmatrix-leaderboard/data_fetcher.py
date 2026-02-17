@@ -268,7 +268,7 @@ class DataFetcher:
                             continue
 
                         seed = competitor.get('curatedRank', {}).get('current', 99)
-                        if seed >= 17:
+                        if seed <= 0 or seed >= 17:
                             continue  # Not a seeded tournament team
 
                         team_abbr = team_info.get('abbreviation', 'UNK')

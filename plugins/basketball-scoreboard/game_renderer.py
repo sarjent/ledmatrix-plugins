@@ -390,7 +390,9 @@ class GameRenderer:
         # Final status (Top center) - prepend round for tournament games
         status_text = game.get("period_text", "Final")
         if self.show_round and game.get("is_tournament") and game.get("tournament_round"):
-            status_text = f"{game['tournament_round']} {status_text}"
+            candidate = f"{game['tournament_round']} {status_text}"
+            if draw.textlength(candidate, font=self.fonts['time']) <= self.display_width - 4:
+                status_text = candidate
         status_width = draw.textlength(status_text, font=self.fonts['time'])
         status_x = (self.display_width - status_width) // 2
         status_y = 1
@@ -538,7 +540,7 @@ class GameRenderer:
                 home_record_x = self.display_width - home_record_width - 3
                 self._draw_text_with_outline(draw, home_text, (home_record_x, record_y), record_font)
 
-    def _get_team_display_text(self, abbr: str, record: str, game: Dict = None, side: str = "") -> str:
+    def _get_team_display_text(self, abbr: str, record: str, game: Optional[Dict] = None, side: str = "") -> str:
         """Get the display text for a team (seed, ranking, or record)."""
         # Tournament seeds take priority over AP rankings
         if game and game.get("is_tournament") and self.show_seeds:

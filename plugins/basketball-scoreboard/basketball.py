@@ -282,7 +282,7 @@ class BasketballLive(Basketball, SportsLive):
             if self.show_records or self.show_ranking or show_seeds:
                 try:
                     record_font = ImageFont.truetype("assets/fonts/4x6-font.ttf", 6)
-                    self.logger.debug(f"Loaded 6px record font successfully")
+                    self.logger.debug("Loaded 6px record font successfully")
                 except IOError:
                     record_font = ImageFont.load_default()
                     self.logger.warning(f"Failed to load 6px font, using default font (size: {record_font.size})")
