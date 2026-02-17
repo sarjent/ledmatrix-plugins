@@ -834,6 +834,38 @@ class SportsCore(ABC):
 
         return ""
 
+    def _get_team_annotation(self, game: Dict, side: str) -> str:
+        """Get the annotation text (seed, ranking, or record) for a team side.
+
+        Args:
+            game: Game dict with team data.
+            side: 'away' or 'home'.
+
+        Returns:
+            Annotation string like '(3)', '#5', '28-4', or ''.
+        """
+        abbr = game.get(f"{side}_abbr", "")
+        if not abbr:
+            return ""
+
+        show_seeds = self.show_seeds and game.get("is_tournament", False)
+        seed = game.get(f"{side}_seed", 0)
+        if show_seeds and seed > 0:
+            return f"({seed})"
+
+        if self.show_ranking:
+            rank = self._team_rankings_cache.get(abbr, 0)
+            if rank > 0:
+                return f"#{rank}"
+            if self.show_records:
+                return game.get(f"{side}_record", "")
+            return ""
+
+        if self.show_records:
+            return game.get(f"{side}_record", "")
+
+        return ""
+
     def _extract_game_details_common(
         self, game_event: Dict
     ) -> tuple[Dict | None, Dict | None, Dict | None, Dict | None, Dict | None]:
@@ -1077,10 +1109,10 @@ class SportsCore(ABC):
             if is_tournament:
                 home_seed = home_team.get("curatedRank", {}).get("current", 0)
                 away_seed = away_team.get("curatedRank", {}).get("current", 0)
-                # curatedRank of 99 means unranked/no seed
-                if home_seed >= 99:
+                # Only valid tournament seeds are 1-16
+                if not 1 <= home_seed <= 16:
                     home_seed = 0
-                if away_seed >= 99:
+                if not 1 <= away_seed <= 16:
                     away_seed = 0
 
             details.update({
@@ -1640,77 +1672,37 @@ class SportsUpcoming(SportsCore):
                     f"Record positioning: height={record_height}, record_y={record_y}, display_height={self.display_height}"
                 )
 
-                # Display away team info
-                if away_abbr:
-                    # Tournament seeds take priority over AP rankings
-                    if show_seeds and game.get("away_seed", 0) > 0:
-                        away_text = f"({game['away_seed']})"
-                    elif self.show_ranking and self.show_records:
-                        away_rank = self._team_rankings_cache.get(away_abbr, 0)
-                        if away_rank > 0:
-                            away_text = f"#{away_rank}"
-                        else:
-                            away_text = game.get("away_record", "")
-                    elif self.show_ranking:
-                        away_rank = self._team_rankings_cache.get(away_abbr, 0)
-                        if away_rank > 0:
-                            away_text = f"#{away_rank}"
-                        else:
-                            away_text = ""
-                    elif self.show_records:
-                        away_text = game.get("away_record", "")
-                    else:
-                        away_text = ""
+                # Display away team annotation (seed, ranking, or record)
+                away_text = self._get_team_annotation(game, "away")
+                if away_text:
+                    away_record_x = 0 + self._get_layout_offset('record', 'away_x_offset')
+                    self.logger.debug(
+                        f"Drawing away ranking '{away_text}' at ({away_record_x}, {record_y}) with font size {record_font.size if hasattr(record_font, 'size') else 'unknown'}"
+                    )
+                    self._draw_text_with_outline(
+                        draw_overlay,
+                        away_text,
+                        (away_record_x, record_y),
+                        record_font,
+                    )
 
-                    if away_text:
-                        away_record_x = 0 + self._get_layout_offset('record', 'away_x_offset')
-                        self.logger.debug(
-                            f"Drawing away ranking '{away_text}' at ({away_record_x}, {record_y}) with font size {record_font.size if hasattr(record_font, 'size') else 'unknown'}"
-                        )
-                        self._draw_text_with_outline(
-                            draw_overlay,
-                            away_text,
-                            (away_record_x, record_y),
-                            record_font,
-                        )
-
-                # Display home team info
-                if home_abbr:
-                    # Tournament seeds take priority over AP rankings
-                    if show_seeds and game.get("home_seed", 0) > 0:
-                        home_text = f"({game['home_seed']})"
-                    elif self.show_ranking and self.show_records:
-                        home_rank = self._team_rankings_cache.get(home_abbr, 0)
-                        if home_rank > 0:
-                            home_text = f"#{home_rank}"
-                        else:
-                            home_text = game.get("home_record", "")
-                    elif self.show_ranking:
-                        home_rank = self._team_rankings_cache.get(home_abbr, 0)
-                        if home_rank > 0:
-                            home_text = f"#{home_rank}"
-                        else:
-                            home_text = ""
-                    elif self.show_records:
-                        home_text = game.get("home_record", "")
-                    else:
-                        home_text = ""
-
-                    if home_text:
-                        home_record_bbox = draw_overlay.textbbox(
-                            (0, 0), home_text, font=record_font
-                        )
-                        home_record_width = home_record_bbox[2] - home_record_bbox[0]
-                        home_record_x = self.display_width - home_record_width + self._get_layout_offset('record', 'home_x_offset')
-                        self.logger.debug(
-                            f"Drawing home ranking '{home_text}' at ({home_record_x}, {record_y}) with font size {record_font.size if hasattr(record_font, 'size') else 'unknown'}"
-                        )
-                        self._draw_text_with_outline(
-                            draw_overlay,
-                            home_text,
-                            (home_record_x, record_y),
-                            record_font,
-                        )
+                # Display home team annotation (seed, ranking, or record)
+                home_text = self._get_team_annotation(game, "home")
+                if home_text:
+                    home_record_bbox = draw_overlay.textbbox(
+                        (0, 0), home_text, font=record_font
+                    )
+                    home_record_width = home_record_bbox[2] - home_record_bbox[0]
+                    home_record_x = self.display_width - home_record_width + self._get_layout_offset('record', 'home_x_offset')
+                    self.logger.debug(
+                        f"Drawing home ranking '{home_text}' at ({home_record_x}, {record_y}) with font size {record_font.size if hasattr(record_font, 'size') else 'unknown'}"
+                    )
+                    self._draw_text_with_outline(
+                        draw_overlay,
+                        home_text,
+                        (home_record_x, record_y),
+                        record_font,
+                    )
 
             # Composite and display
             main_img = Image.alpha_composite(main_img, overlay)
@@ -2259,77 +2251,37 @@ class SportsRecent(SportsCore):
                     f"Record positioning: height={record_height}, record_y={record_y}, display_height={self.display_height}"
                 )
 
-                # Display away team info
-                if away_abbr:
-                    # Tournament seeds take priority over AP rankings
-                    if show_seeds and game.get("away_seed", 0) > 0:
-                        away_text = f"({game['away_seed']})"
-                    elif self.show_ranking and self.show_records:
-                        away_rank = self._team_rankings_cache.get(away_abbr, 0)
-                        if away_rank > 0:
-                            away_text = f"#{away_rank}"
-                        else:
-                            away_text = game.get("away_record", "")
-                    elif self.show_ranking:
-                        away_rank = self._team_rankings_cache.get(away_abbr, 0)
-                        if away_rank > 0:
-                            away_text = f"#{away_rank}"
-                        else:
-                            away_text = ""
-                    elif self.show_records:
-                        away_text = game.get("away_record", "")
-                    else:
-                        away_text = ""
+                # Display away team annotation (seed, ranking, or record)
+                away_text = self._get_team_annotation(game, "away")
+                if away_text:
+                    away_record_x = 0 + self._get_layout_offset('record', 'away_x_offset')
+                    self.logger.debug(
+                        f"Drawing away ranking '{away_text}' at ({away_record_x}, {record_y}) with font size {record_font.size if hasattr(record_font, 'size') else 'unknown'}"
+                    )
+                    self._draw_text_with_outline(
+                        draw_overlay,
+                        away_text,
+                        (away_record_x, record_y),
+                        record_font,
+                    )
 
-                    if away_text:
-                        away_record_x = 0 + self._get_layout_offset('record', 'away_x_offset')
-                        self.logger.debug(
-                            f"Drawing away ranking '{away_text}' at ({away_record_x}, {record_y}) with font size {record_font.size if hasattr(record_font, 'size') else 'unknown'}"
-                        )
-                        self._draw_text_with_outline(
-                            draw_overlay,
-                            away_text,
-                            (away_record_x, record_y),
-                            record_font,
-                        )
-
-                # Display home team info
-                if home_abbr:
-                    # Tournament seeds take priority over AP rankings
-                    if show_seeds and game.get("home_seed", 0) > 0:
-                        home_text = f"({game['home_seed']})"
-                    elif self.show_ranking and self.show_records:
-                        home_rank = self._team_rankings_cache.get(home_abbr, 0)
-                        if home_rank > 0:
-                            home_text = f"#{home_rank}"
-                        else:
-                            home_text = game.get("home_record", "")
-                    elif self.show_ranking:
-                        home_rank = self._team_rankings_cache.get(home_abbr, 0)
-                        if home_rank > 0:
-                            home_text = f"#{home_rank}"
-                        else:
-                            home_text = ""
-                    elif self.show_records:
-                        home_text = game.get("home_record", "")
-                    else:
-                        home_text = ""
-
-                    if home_text:
-                        home_record_bbox = draw_overlay.textbbox(
-                            (0, 0), home_text, font=record_font
-                        )
-                        home_record_width = home_record_bbox[2] - home_record_bbox[0]
-                        home_record_x = display_width - home_record_width + self._get_layout_offset('record', 'home_x_offset')
-                        self.logger.debug(
-                            f"Drawing home ranking '{home_text}' at ({home_record_x}, {record_y}) with font size {record_font.size if hasattr(record_font, 'size') else 'unknown'}"
-                        )
-                        self._draw_text_with_outline(
-                            draw_overlay,
-                            home_text,
-                            (home_record_x, record_y),
-                            record_font,
-                        )
+                # Display home team annotation (seed, ranking, or record)
+                home_text = self._get_team_annotation(game, "home")
+                if home_text:
+                    home_record_bbox = draw_overlay.textbbox(
+                        (0, 0), home_text, font=record_font
+                    )
+                    home_record_width = home_record_bbox[2] - home_record_bbox[0]
+                    home_record_x = display_width - home_record_width + self._get_layout_offset('record', 'home_x_offset')
+                    self.logger.debug(
+                        f"Drawing home ranking '{home_text}' at ({home_record_x}, {record_y}) with font size {record_font.size if hasattr(record_font, 'size') else 'unknown'}"
+                    )
+                    self._draw_text_with_outline(
+                        draw_overlay,
+                        home_text,
+                        (home_record_x, record_y),
+                        record_font,
+                    )
 
             self._custom_scorebug_layout(game, draw_overlay)
             # Composite and display

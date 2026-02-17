@@ -267,7 +267,10 @@ class DataFetcher:
                         if not team_id or team_id in seen_teams:
                             continue
 
-                        seed = competitor.get('curatedRank', {}).get('current', 99)
+                        try:
+                            seed = int(competitor.get('curatedRank', {}).get('current', 99))
+                        except (TypeError, ValueError):
+                            continue  # Non-numeric seed value
                         if seed <= 0 or seed >= 17:
                             continue  # Not a seeded tournament team
 
