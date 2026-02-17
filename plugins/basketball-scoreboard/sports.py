@@ -7,7 +7,7 @@ import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, ClassVar, Dict, List, Optional
 
 import pytz
 import requests
@@ -32,7 +32,7 @@ from src.logo_downloader import LogoDownloader, download_missing_logo
 
 
 class SportsCore(ABC):
-    TOURNAMENT_ROUND_ORDER = {"NCG": 0, "F4": 1, "E8": 2, "S16": 3, "R32": 4, "R64": 5, "": 6}
+    TOURNAMENT_ROUND_ORDER: ClassVar[Dict[str, int]] = {"NCG": 0, "F4": 1, "E8": 2, "S16": 3, "R32": 4, "R64": 5, "": 6}
 
     def __init__(
         self,
@@ -2206,7 +2206,9 @@ class SportsRecent(SportsCore):
                 "period_text", "Final"
             )  # Use formatted period text (e.g., "Final/OT") or default "Final"
             if self.show_round and game.get("is_tournament") and game.get("tournament_round"):
-                status_text = f"{game['tournament_round']} {status_text}"
+                candidate = f"{game['tournament_round']} {status_text}"
+                if draw_overlay.textlength(candidate, font=self.fonts["time"]) <= display_width - 40:
+                    status_text = candidate
             status_width = draw_overlay.textlength(status_text, font=self.fonts["time"])
             status_x = (display_width - status_width) // 2 + self._get_layout_offset('status', 'x_offset')
             status_y = 1 + self._get_layout_offset('status', 'y_offset')

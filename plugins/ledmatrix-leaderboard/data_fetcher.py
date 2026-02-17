@@ -301,14 +301,13 @@ class DataFetcher:
                 'league': league_key,
                 'is_tournament': True,
             }
-            if standings:
-                self.cache_manager.save_cache(cache_key, cache_data)
-
-            return standings
-
         except Exception:
             self.logger.exception("Error fetching tournament seeds for %s", league_key)
             return []
+        else:
+            if standings:
+                self.cache_manager.save_cache(cache_key, cache_data)
+            return standings
 
     def _fetch_ncaa_basketball_rankings(self, league_config: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Fetch NCAA Basketball rankings from ESPN API using the rankings endpoint.

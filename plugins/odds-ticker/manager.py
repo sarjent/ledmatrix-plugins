@@ -20,7 +20,7 @@ Features:
 - Base indicators for baseball
 - All original fonts, colors, and spacing
 
-API Version: 1.0.0
+API Version: 1.1.0
 """
 
 import time
@@ -1169,9 +1169,9 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
                                             away_seed = int(away_team.get('curatedRank', {}).get('current', 0) or 0)
                                         except (TypeError, ValueError):
                                             away_seed = 0
-                                        if home_seed >= 17:
+                                        if not 1 <= home_seed <= 16:
                                             home_seed = 0
-                                        if away_seed >= 17:
+                                        if not 1 <= away_seed <= 16:
                                             away_seed = 0
 
                                 broadcast_info = []

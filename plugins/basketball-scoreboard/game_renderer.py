@@ -99,10 +99,6 @@ class GameRenderer:
         league_mm = self._march_madness_by_league.get(league)
         if league_mm is not None:
             return league_mm.get(setting, default)
-        # Fallback: use first available NCAA league settings
-        first_mm = next(iter(self._march_madness_by_league.values()), None)
-        if first_mm is not None:
-            return first_mm.get(setting, default)
         return default
 
     def _load_fonts(self) -> Dict[str, ImageFont.FreeTypeFont]:
@@ -404,7 +400,7 @@ class GameRenderer:
         status_text = game.get("period_text", "Final")
         if self._get_mm_setting(game, 'show_round') and game.get("is_tournament") and game.get("tournament_round"):
             candidate = f"{game['tournament_round']} {status_text}"
-            if draw.textlength(candidate, font=self.fonts['time']) <= self.display_width - 4:
+            if draw.textlength(candidate, font=self.fonts['time']) <= self.display_width - 40:
                 status_text = candidate
         status_width = draw.textlength(status_text, font=self.fonts['time'])
         status_x = (self.display_width - status_width) // 2
