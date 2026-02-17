@@ -301,12 +301,13 @@ class DataFetcher:
                 'league': league_key,
                 'is_tournament': True,
             }
-            self.cache_manager.save_cache(cache_key, cache_data)
+            if standings:
+                self.cache_manager.save_cache(cache_key, cache_data)
 
             return standings
 
-        except Exception as e:
-            self.logger.exception(f"Error fetching tournament seeds for {league_key}: {e}")
+        except Exception:
+            self.logger.exception("Error fetching tournament seeds for %s", league_key)
             return []
 
     def _fetch_ncaa_basketball_rankings(self, league_config: Dict[str, Any]) -> List[Dict[str, Any]]:

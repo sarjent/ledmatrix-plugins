@@ -96,12 +96,13 @@ class GameRenderer:
     def _get_mm_setting(self, game: Dict, setting: str, default: bool = True) -> bool:
         """Look up a per-league March Madness setting for a game."""
         league = game.get('league', '')
-        mm = self._march_madness_by_league.get(league)
-        if mm is not None:
-            return mm.get(setting, default)
-        # Fallback: check any NCAA league that has settings
-        for mm in self._march_madness_by_league.values():
-            return mm.get(setting, default)
+        league_mm = self._march_madness_by_league.get(league)
+        if league_mm is not None:
+            return league_mm.get(setting, default)
+        # Fallback: use first available NCAA league settings
+        first_mm = next(iter(self._march_madness_by_league.values()), None)
+        if first_mm is not None:
+            return first_mm.get(setting, default)
         return default
 
     def _load_fonts(self) -> Dict[str, ImageFont.FreeTypeFont]:

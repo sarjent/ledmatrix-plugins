@@ -32,6 +32,8 @@ from src.logo_downloader import LogoDownloader, download_missing_logo
 
 
 class SportsCore(ABC):
+    TOURNAMENT_ROUND_ORDER = {"NCG": 0, "F4": 1, "E8": 2, "S16": 3, "R32": 4, "R64": 5, "": 6}
+
     def __init__(
         self,
         config: Dict[str, Any],
@@ -1980,10 +1982,9 @@ class SportsRecent(SportsCore):
                         if tg.get("id") not in existing_ids
                     ]
                     # Sort by round significance (most important round first), then most recent
-                    round_order = {"NCG": 0, "F4": 1, "E8": 2, "S16": 3, "R32": 4, "R64": 5, "": 6}
                     tourney_extras.sort(
                         key=lambda g: (
-                            round_order.get(g.get("tournament_round", ""), 6),
+                            self.TOURNAMENT_ROUND_ORDER.get(g.get("tournament_round", ""), 6),
                             -(g.get("start_time_utc") or datetime.min.replace(tzinfo=pytz.utc)).timestamp(),
                         )
                     )
@@ -1998,7 +1999,7 @@ class SportsRecent(SportsCore):
                         # Re-sort combined list by round significance, then most recent
                         team_games.sort(
                             key=lambda g: (
-                                round_order.get(g.get("tournament_round", ""), 6),
+                                self.TOURNAMENT_ROUND_ORDER.get(g.get("tournament_round", ""), 6),
                                 -(g.get("start_time_utc") or datetime.min.replace(tzinfo=pytz.utc)).timestamp(),
                             )
                         )
@@ -2552,6 +2553,11 @@ class SportsLive(SportsCore):
             new_live_games = []
             if not data:
                 self.logger.debug(f"No data returned from _fetch_data() for {self.sport_key}")
+                if self.live_games:
+                    self.logger.warning("Could not fetch update; keeping existing live game data.")
+                else:
+                    self.logger.warning("Could not fetch data and no existing live games.")
+                    self.current_game = None
             elif "events" not in data:
                 self.logger.debug(f"Data returned but no 'events' key for {self.sport_key}: {list(data.keys()) if isinstance(data, dict) else type(data)}")
             else:
@@ -2774,18 +2780,6 @@ class SportsLive(SportsCore):
                         gid: ts for gid, ts in self.game_update_timestamps.items()
                         if gid in active_ids
                     }
-
-            else:
-                # Error fetching data or no events
-                if self.live_games:  # Were there games before?
-                    self.logger.warning(
-                        "Could not fetch update; keeping existing live game data for now."
-                    )  # Changed log prefix
-                else:
-                    self.logger.warning(
-                        "Could not fetch data and no existing live games."
-                    )  # Changed log prefix
-                    self.current_game = None  # Clear current game if fetch fails and no games were active
 
             # Handle game switching (protected by lock for thread safety)
             with self._games_lock:

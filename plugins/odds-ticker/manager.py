@@ -1148,30 +1148,31 @@ class OddsTickerPlugin(BasePlugin, BaseOddsManager):
                                 home_name = home_team['team'].get('name', home_abbr)
                                 away_name = away_team['team'].get('name', away_abbr)
 
-                                # Extract tournament metadata (seeds + round)
+                                # Extract tournament metadata (seeds + round) for NCAA basketball only
                                 tournament_round = ""
                                 home_seed = 0
                                 away_seed = 0
-                                competition = event['competitions'][0]
-                                notes = competition.get('notes', [])
-                                for note in notes:
-                                    headline = note.get('headline', '')
-                                    if any(kw in headline for kw in ('Championship', 'Round', 'Sweet', 'Elite', 'Final Four')):
-                                        tournament_round = headline
-                                        break
-                                if tournament_round:
-                                    try:
-                                        home_seed = int(home_team.get('curatedRank', {}).get('current', 0) or 0)
-                                    except (TypeError, ValueError):
-                                        home_seed = 0
-                                    try:
-                                        away_seed = int(away_team.get('curatedRank', {}).get('current', 0) or 0)
-                                    except (TypeError, ValueError):
-                                        away_seed = 0
-                                    if home_seed >= 17:
-                                        home_seed = 0
-                                    if away_seed >= 17:
-                                        away_seed = 0
+                                if canonical_league_key in ('ncaam_basketball', 'ncaaw_basketball'):
+                                    competition = event['competitions'][0]
+                                    notes = competition.get('notes', [])
+                                    for note in notes:
+                                        headline = note.get('headline', '')
+                                        if any(kw in headline for kw in ('Championship', 'Round', 'Sweet', 'Elite', 'Final Four')):
+                                            tournament_round = headline
+                                            break
+                                    if tournament_round:
+                                        try:
+                                            home_seed = int(home_team.get('curatedRank', {}).get('current', 0) or 0)
+                                        except (TypeError, ValueError):
+                                            home_seed = 0
+                                        try:
+                                            away_seed = int(away_team.get('curatedRank', {}).get('current', 0) or 0)
+                                        except (TypeError, ValueError):
+                                            away_seed = 0
+                                        if home_seed >= 17:
+                                            home_seed = 0
+                                        if away_seed >= 17:
+                                            away_seed = 0
 
                                 broadcast_info = []
                                 broadcasts = event.get('competitions', [{}])[0].get('broadcasts', [])
