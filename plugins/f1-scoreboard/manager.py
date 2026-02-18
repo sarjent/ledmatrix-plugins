@@ -74,6 +74,9 @@ class F1ScoreboardPlugin(BasePlugin):
         self._last_update = 0
         self._update_interval = config.get("update_interval", 3600)
 
+        # Display state tracking (for dynamic duration)
+        self._current_display_mode: Optional[str] = None
+
         # Build enabled modes
         self.modes = self._build_enabled_modes()
 
@@ -396,19 +399,27 @@ class F1ScoreboardPlugin(BasePlugin):
 
     # ─── Display ───────────────────────────────────────────────────────
 
-    def display(self, force_clear=False, display_mode=None):
+    def display(self, force_clear=False, display_mode=None) -> bool:
         """
         Display the current F1 mode.
 
         Args:
             force_clear: Whether to clear display first
             display_mode: Specific mode to display (from manifest display_modes)
+
+        Returns:
+            True if content was displayed, False if mode has no data
         """
+        if not self.enabled:
+            return False
+
         if display_mode is None:
             display_mode = self.modes[0] if self.modes else "f1_driver_standings"
 
+        self._current_display_mode = display_mode
+
         if display_mode == "f1_upcoming":
-            self._display_upcoming(force_clear)
+            return self._display_upcoming(force_clear)
         elif display_mode in ("f1_driver_standings",
                                "f1_constructor_standings",
                                "f1_recent_races",
@@ -416,14 +427,15 @@ class F1ScoreboardPlugin(BasePlugin):
                                "f1_practice",
                                "f1_sprint",
                                "f1_calendar"):
-            self._display_scroll_mode(display_mode, force_clear)
+            return self._display_scroll_mode(display_mode, force_clear)
         else:
             self.logger.warning("Unknown display mode: %s", display_mode)
+            return False
 
-    def _display_upcoming(self, force_clear: bool):
+    def _display_upcoming(self, force_clear: bool) -> bool:
         """Display the upcoming race card (static)."""
         if not self._upcoming_race:
-            return
+            return False
 
         if force_clear:
             self.display_manager.image.paste(
@@ -463,32 +475,43 @@ class F1ScoreboardPlugin(BasePlugin):
         card = self.renderer.render_upcoming_race(self._upcoming_race)
         self.display_manager.image.paste(card, (0, 0))
         self.display_manager.update_display()
+        return True
 
     def _display_scroll_mode(self, display_mode: str,
-                              force_clear: bool):
+                              force_clear: bool) -> bool:
         """Display a scrolling mode."""
-        mode_key_map = {
-            "f1_driver_standings": "driver_standings",
-            "f1_constructor_standings": "constructor_standings",
-            "f1_recent_races": "recent_races",
-            "f1_qualifying": "qualifying",
-            "f1_practice": "practice",
-            "f1_sprint": "sprint",
-            "f1_calendar": "calendar",
-        }
-
-        mode_key = mode_key_map.get(display_mode, display_mode)
+        mode_key = self._MODE_KEY_MAP.get(display_mode, display_mode)
 
         if not self._scroll_manager.is_mode_prepared(mode_key):
             self._prepare_scroll_content()
 
+        if not self._scroll_manager.is_mode_prepared(mode_key):
+            return False
+
         self._scroll_manager.display_frame(mode_key, force_clear)
+        return True
 
     # ─── Vegas Mode ────────────────────────────────────────────────────
 
     def get_vegas_content(self) -> Optional[List[Image.Image]]:
-        """Return all rendered cards for Vegas scroll mode."""
-        images = self._scroll_manager.get_all_vegas_content_items()
+        """Return rendered cards for modes that have data."""
+        images = []
+
+        # Only include modes that have actual data
+        mode_data = {
+            "driver_standings": self._driver_standings,
+            "constructor_standings": self._constructor_standings,
+            "recent_races": self._recent_races,
+            "qualifying": self._qualifying,
+            "practice": self._practice_results,
+            "sprint": self._sprint,
+            "calendar": self._calendar,
+        }
+        for mode_key, data in mode_data.items():
+            if data and self._scroll_manager.is_mode_prepared(mode_key):
+                sd = self._scroll_manager._scroll_displays.get(mode_key)
+                if sd:
+                    images.extend(sd.get_vegas_items())
 
         # Add upcoming race card if available
         if self._upcoming_race:
@@ -506,7 +529,71 @@ class F1ScoreboardPlugin(BasePlugin):
         """Return SCROLL for continuous scrolling."""
         return VegasDisplayMode.SCROLL
 
+    # ─── Dynamic Duration ──────────────────────────────────────────────
+
+    _SCROLL_MODES = frozenset({
+        "f1_driver_standings", "f1_constructor_standings",
+        "f1_recent_races", "f1_qualifying", "f1_practice",
+        "f1_sprint", "f1_calendar",
+    })
+
+    _MODE_KEY_MAP = {
+        "f1_driver_standings": "driver_standings",
+        "f1_constructor_standings": "constructor_standings",
+        "f1_recent_races": "recent_races",
+        "f1_qualifying": "qualifying",
+        "f1_practice": "practice",
+        "f1_sprint": "sprint",
+        "f1_calendar": "calendar",
+    }
+
+    def supports_dynamic_duration(self) -> bool:
+        """Enable dynamic duration for scrolling modes."""
+        dd = self.config.get("dynamic_duration", {})
+        if not isinstance(dd, dict) or not dd.get("enabled", True):
+            return False
+        return (self._current_display_mode is not None
+                and self._current_display_mode in self._SCROLL_MODES)
+
+    def is_cycle_complete(self) -> bool:
+        """Scroll cycle complete when ScrollHelper reports done."""
+        if not self._current_display_mode:
+            return True
+        mode_key = self._MODE_KEY_MAP.get(self._current_display_mode)
+        if not mode_key:
+            return True
+        return self._scroll_manager.is_scroll_complete(mode_key)
+
+    def reset_cycle_state(self) -> None:
+        """Reset scroll position for the current mode."""
+        super().reset_cycle_state()
+        if self._current_display_mode:
+            mode_key = self._MODE_KEY_MAP.get(self._current_display_mode)
+            if mode_key:
+                self._scroll_manager.reset_mode(mode_key)
+
     # ─── Lifecycle ─────────────────────────────────────────────────────
+
+    def get_info(self) -> Dict[str, Any]:
+        """Return diagnostic info for the web UI."""
+        info = super().get_info()
+        info.update({
+            "name": "F1 Scoreboard",
+            "enabled_modes": self.modes,
+            "mode_count": len(self.modes),
+            "last_update": self._last_update,
+            "has_driver_standings": bool(self._driver_standings),
+            "has_constructor_standings": bool(self._constructor_standings),
+            "has_recent_races": bool(self._recent_races),
+            "has_upcoming_race": self._upcoming_race is not None,
+            "has_qualifying": self._qualifying is not None,
+            "has_practice": bool(self._practice_results),
+            "has_sprint": self._sprint is not None,
+            "has_calendar": bool(self._calendar),
+            "favorite_driver": self.favorite_driver,
+            "favorite_team": self.favorite_team,
+        })
+        return info
 
     def on_config_change(self, new_config):
         """Handle config changes."""
@@ -523,12 +610,17 @@ class F1ScoreboardPlugin(BasePlugin):
         self.renderer = F1Renderer(
             self.display_width, self.display_height,
             new_config, self.logo_loader, self.logger)
+        self._scroll_manager = ScrollDisplayManager(
+            self.display_manager, new_config, self.logger)
 
         # Force data refresh
         self._last_update = 0
 
     def cleanup(self):
         """Clean up resources."""
-        self.logger.info("F1 Scoreboard cleanup")
-        self.logo_loader.clear_cache()
+        try:
+            self.logo_loader.clear_cache()
+            self.logger.info("F1 Scoreboard cleanup completed")
+        except Exception as e:
+            self.logger.error("Error during cleanup: %s", e)
         super().cleanup()

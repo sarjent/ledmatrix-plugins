@@ -6,11 +6,13 @@
   "properties": {
     "enabled": {
       "type": "boolean",
+      "title": "Enabled",
       "default": true,
       "description": "Enable or disable the F1 scoreboard plugin"
     },
     "display_duration": {
       "type": "number",
+      "title": "Display Duration",
       "default": 30,
       "minimum": 5,
       "maximum": 300,
@@ -18,6 +20,7 @@
     },
     "update_interval": {
       "type": "integer",
+      "title": "Update Interval",
       "default": 3600,
       "minimum": 60,
       "maximum": 86400,
@@ -25,13 +28,17 @@
     },
     "favorite_team": {
       "type": "string",
+      "title": "Favorite Team",
       "default": "",
-      "description": "Favorite constructor/team ID (e.g., 'mclaren', 'ferrari', 'red_bull', 'mercedes', 'williams', 'aston_martin', 'alpine', 'haas', 'sauber', 'rb'). This team will always be shown and highlighted in standings."
+      "enum": ["", "mclaren", "ferrari", "red_bull", "mercedes", "williams", "aston_martin", "alpine", "haas", "sauber", "rb"],
+      "description": "Favorite constructor/team. This team will always be shown and highlighted in standings."
     },
     "favorite_driver": {
       "type": "string",
+      "title": "Favorite Driver",
       "default": "",
-      "description": "Favorite driver code (e.g., 'NOR', 'VER', 'HAM', 'LEC', 'PIA', 'RUS'). This driver will always be shown and highlighted in standings and results."
+      "enum": ["", "VER", "NOR", "PIA", "LEC", "SAI", "HAM", "RUS", "ALO", "STR", "GAS", "DOO", "TSU", "LAW", "ALB", "SAR", "HUL", "BEA", "BOT", "ZHO", "OCO", "BOR"],
+      "description": "Favorite driver code. This driver will always be shown and highlighted in standings and results."
     },
     "driver_standings": {
       "type": "object",
@@ -40,11 +47,13 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "title": "Enabled",
           "default": true,
           "description": "Show driver standings display mode"
         },
         "top_n": {
           "type": "integer",
+          "title": "Top Drivers",
           "default": 10,
           "minimum": 3,
           "maximum": 22,
@@ -52,10 +61,12 @@
         },
         "always_show_favorite": {
           "type": "boolean",
+          "title": "Always Show Favorite",
           "default": true,
           "description": "Always include favorite driver even if outside top N"
         }
       },
+      "x-propertyOrder": ["enabled", "top_n", "always_show_favorite"],
       "additionalProperties": false
     },
     "constructor_standings": {
@@ -65,11 +76,13 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "title": "Enabled",
           "default": true,
           "description": "Show constructor standings display mode"
         },
         "top_n": {
           "type": "integer",
+          "title": "Top Constructors",
           "default": 10,
           "minimum": 3,
           "maximum": 12,
@@ -77,10 +90,12 @@
         },
         "always_show_favorite": {
           "type": "boolean",
+          "title": "Always Show Favorite",
           "default": true,
           "description": "Always include favorite team even if outside top N"
         }
       },
+      "x-propertyOrder": ["enabled", "top_n", "always_show_favorite"],
       "additionalProperties": false
     },
     "recent_races": {
@@ -90,11 +105,13 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "title": "Enabled",
           "default": true,
           "description": "Show recent race results display mode"
         },
         "number_of_races": {
           "type": "integer",
+          "title": "Number of Races",
           "default": 3,
           "minimum": 1,
           "maximum": 10,
@@ -102,6 +119,7 @@
         },
         "top_finishers": {
           "type": "integer",
+          "title": "Top Finishers",
           "default": 3,
           "minimum": 1,
           "maximum": 20,
@@ -109,10 +127,12 @@
         },
         "always_show_favorite": {
           "type": "boolean",
+          "title": "Always Show Favorite",
           "default": true,
           "description": "Always include favorite driver in results even if outside top N finishers"
         }
       },
+      "x-propertyOrder": ["enabled", "number_of_races", "top_finishers", "always_show_favorite"],
       "additionalProperties": false
     },
     "upcoming": {
@@ -122,20 +142,24 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "title": "Enabled",
           "default": true,
           "description": "Show upcoming race display mode"
         },
         "show_session_times": {
           "type": "boolean",
+          "title": "Show Session Times",
           "default": true,
           "description": "Show qualifying and sprint session times in addition to race time"
         },
         "countdown_enabled": {
           "type": "boolean",
+          "title": "Countdown Timer",
           "default": true,
           "description": "Show live countdown timer to next session"
         }
       },
+      "x-propertyOrder": ["enabled", "show_session_times", "countdown_enabled"],
       "additionalProperties": false
     },
     "qualifying": {
@@ -145,30 +169,36 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "title": "Enabled",
           "default": true,
           "description": "Show qualifying results display mode"
         },
         "show_q1": {
           "type": "boolean",
+          "title": "Show Q1",
           "default": true,
           "description": "Show Q1 results (all 20 drivers, bottom 5 eliminated)"
         },
         "show_q2": {
           "type": "boolean",
+          "title": "Show Q2",
           "default": true,
           "description": "Show Q2 results (top 15 drivers, bottom 5 eliminated)"
         },
         "show_q3": {
           "type": "boolean",
+          "title": "Show Q3",
           "default": true,
           "description": "Show Q3 results (top 10 drivers, determines pole position)"
         },
         "show_gaps": {
           "type": "boolean",
+          "title": "Show Gaps",
           "default": true,
           "description": "Show time differential to session leader"
         }
       },
+      "x-propertyOrder": ["enabled", "show_q3", "show_q2", "show_q1", "show_gaps"],
       "additionalProperties": false
     },
     "practice": {
@@ -178,11 +208,14 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "title": "Enabled",
           "default": true,
           "description": "Show free practice results display mode"
         },
         "sessions_to_show": {
           "type": "array",
+          "title": "Sessions to Show",
+          "x-widget": "checkbox-group",
           "items": {
             "type": "string",
             "enum": ["FP1", "FP2", "FP3"]
@@ -192,12 +225,14 @@
         },
         "top_n": {
           "type": "integer",
+          "title": "Top Drivers",
           "default": 10,
           "minimum": 3,
           "maximum": 22,
           "description": "Number of top drivers to show per practice session"
         }
       },
+      "x-propertyOrder": ["enabled", "sessions_to_show", "top_n"],
       "additionalProperties": false
     },
     "sprint": {
@@ -207,17 +242,20 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "title": "Enabled",
           "default": true,
           "description": "Show sprint race results display mode"
         },
         "top_finishers": {
           "type": "integer",
+          "title": "Top Finishers",
           "default": 10,
           "minimum": 3,
           "maximum": 22,
           "description": "Number of top finishers to display"
         }
       },
+      "x-propertyOrder": ["enabled", "top_finishers"],
       "additionalProperties": false
     },
     "calendar": {
@@ -227,32 +265,61 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "title": "Enabled",
           "default": true,
           "description": "Show race calendar display mode"
         },
         "show_practice": {
           "type": "boolean",
+          "title": "Show Practice",
           "default": false,
           "description": "Include practice sessions in calendar"
         },
         "show_qualifying": {
           "type": "boolean",
+          "title": "Show Qualifying",
           "default": true,
           "description": "Include qualifying sessions in calendar"
         },
         "show_sprint": {
           "type": "boolean",
+          "title": "Show Sprint",
           "default": true,
           "description": "Include sprint sessions in calendar"
         },
         "max_events": {
           "type": "integer",
+          "title": "Max Events",
           "default": 5,
           "minimum": 1,
           "maximum": 24,
           "description": "Maximum number of upcoming race weekends to show"
         }
       },
+      "x-propertyOrder": ["enabled", "show_practice", "show_qualifying", "show_sprint", "max_events"],
+      "additionalProperties": false
+    },
+    "dynamic_duration": {
+      "type": "object",
+      "title": "Dynamic Duration",
+      "description": "Allow scrolling modes to run until their scroll cycle completes instead of using a fixed timer",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "title": "Enabled",
+          "default": true,
+          "description": "Enable dynamic duration for scrolling display modes"
+        },
+        "max_duration_seconds": {
+          "type": "integer",
+          "title": "Max Duration",
+          "default": 120,
+          "minimum": 30,
+          "maximum": 300,
+          "description": "Maximum seconds before forcing rotation even if scroll is incomplete"
+        }
+      },
+      "x-propertyOrder": ["enabled", "max_duration_seconds"],
       "additionalProperties": false
     },
     "customization": {
@@ -267,16 +334,19 @@
           "properties": {
             "font": {
               "type": "string",
+              "title": "Font",
               "enum": ["PressStart2P-Regular.ttf", "4x6-font.ttf", "5by7.regular.ttf"],
               "default": "PressStart2P-Regular.ttf"
             },
             "font_size": {
               "type": "integer",
+              "title": "Font Size",
               "minimum": 4,
               "maximum": 16,
               "default": 8
             }
           },
+          "x-propertyOrder": ["font", "font_size"],
           "additionalProperties": false
         },
         "position_text": {
@@ -286,16 +356,19 @@
           "properties": {
             "font": {
               "type": "string",
+              "title": "Font",
               "enum": ["PressStart2P-Regular.ttf", "4x6-font.ttf", "5by7.regular.ttf"],
               "default": "PressStart2P-Regular.ttf"
             },
             "font_size": {
               "type": "integer",
+              "title": "Font Size",
               "minimum": 4,
               "maximum": 16,
               "default": 8
             }
           },
+          "x-propertyOrder": ["font", "font_size"],
           "additionalProperties": false
         },
         "detail_text": {
@@ -305,16 +378,19 @@
           "properties": {
             "font": {
               "type": "string",
+              "title": "Font",
               "enum": ["PressStart2P-Regular.ttf", "4x6-font.ttf", "5by7.regular.ttf"],
               "default": "4x6-font.ttf"
             },
             "font_size": {
               "type": "integer",
+              "title": "Font Size",
               "minimum": 4,
               "maximum": 16,
               "default": 6
             }
           },
+          "x-propertyOrder": ["font", "font_size"],
           "additionalProperties": false
         },
         "small_text": {
@@ -324,22 +400,27 @@
           "properties": {
             "font": {
               "type": "string",
+              "title": "Font",
               "enum": ["PressStart2P-Regular.ttf", "4x6-font.ttf", "5by7.regular.ttf"],
               "default": "4x6-font.ttf"
             },
             "font_size": {
               "type": "integer",
+              "title": "Font Size",
               "minimum": 4,
               "maximum": 12,
               "default": 6
             }
           },
+          "x-propertyOrder": ["font", "font_size"],
           "additionalProperties": false
         }
       },
+      "x-propertyOrder": ["header_text", "position_text", "detail_text", "small_text"],
       "additionalProperties": false
     }
   },
+  "x-propertyOrder": ["enabled", "display_duration", "update_interval", "favorite_team", "favorite_driver", "driver_standings", "constructor_standings", "recent_races", "upcoming", "qualifying", "practice", "sprint", "calendar", "dynamic_duration", "customization"],
   "additionalProperties": false,
   "required": ["enabled"]
 }

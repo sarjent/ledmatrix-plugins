@@ -208,3 +208,12 @@ class ScrollDisplayManager:
         if mode_key not in self._scroll_displays:
             return False
         return self._scroll_displays[mode_key].is_prepared()
+
+    def is_scroll_complete(self, mode_key: str) -> bool:
+        """Check if a mode's scroll cycle has completed."""
+        if mode_key not in self._scroll_displays:
+            return True
+        sd = self._scroll_displays[mode_key]
+        if not sd.scroll_helper or not sd.is_prepared():
+            return True
+        return sd.scroll_helper.is_scroll_complete()
