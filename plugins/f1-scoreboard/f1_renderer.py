@@ -795,11 +795,9 @@ class F1Renderer:
         # Event name
         event_name = entry.get("event_name", "")
         short_event = event_name.replace("Grand Prix", "GP")
-        # Truncate if too long
         max_name_width = self.display_width - x_offset - 2
-        while (self._get_text_width(draw, short_event, self.fonts["small"])
-               > max_name_width and len(short_event) > 3):
-            short_event = short_event[:-1]
+        short_event = self._truncate_text(
+            draw, short_event, self.fonts["small"], max_name_width)
 
         self._draw_text_outlined(draw, (x_offset, 2), short_event,
                                 self.fonts["small"],

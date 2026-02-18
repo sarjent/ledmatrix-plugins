@@ -124,17 +124,19 @@ class F1ScoreboardPlugin(BasePlugin):
         self.logger.info("Updating F1 data...")
         self._last_update = now
 
-        try:
-            self._update_standings()
-            self._update_recent_races()
-            self._update_upcoming()
-            self._update_qualifying()
-            self._update_practice()
-            self._update_sprint()
-            self._update_calendar()
-            self._prepare_scroll_content()
-        except Exception as e:
-            self.logger.error("Error updating F1 data: %s", e, exc_info=True)
+        for step in (self._update_standings,
+                     self._update_recent_races,
+                     self._update_upcoming,
+                     self._update_qualifying,
+                     self._update_practice,
+                     self._update_sprint,
+                     self._update_calendar,
+                     self._prepare_scroll_content):
+            try:
+                step()
+            except Exception as e:
+                self.logger.error("Error in %s: %s", step.__name__,
+                                 e, exc_info=True)
 
     def _update_standings(self):
         """Update driver and constructor standings."""

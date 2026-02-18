@@ -111,6 +111,12 @@ class ScrollDisplay:
             True if scroll is complete (looped), False otherwise
         """
         if not self.scroll_helper or not self._is_prepared:
+            # Static fallback: show first card when scrolling unavailable
+            if self._content_items:
+                first = self._content_items[0]
+                if isinstance(first, Image.Image):
+                    self.display_manager.image.paste(first, (0, 0))
+                    self.display_manager.update_display()
             return True
 
         if force_clear:

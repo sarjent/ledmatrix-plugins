@@ -146,8 +146,12 @@ class F1LogoLoader:
         return placeholder
 
     def _load_logo(self, constructor_id: str, max_width: int,
-                   max_height: int) -> Optional[Image.Image]:
-        """Load a team logo from disk, with placeholder fallback."""
+                   max_height: int) -> Image.Image:
+        """Load a team logo from disk, with placeholder fallback.
+
+        Always returns an image — generates a text placeholder if no
+        logo file exists on disk.
+        """
         logo_path = self.teams_dir / f"{constructor_id}.png"
 
         if logo_path.exists():
@@ -279,8 +283,10 @@ class F1LogoLoader:
             logger.warning("Teams logo directory not found: %s", self.teams_dir)
             return
 
+        count = 0
         for logo_file in self.teams_dir.glob("*.png"):
             constructor_id = logo_file.stem
             self.get_team_logo(constructor_id, max_height, max_width)
+            count += 1
 
-        logger.info("Preloaded %d team logos", len(self._cache))
+        logger.info("Preloaded %d team logos", count)

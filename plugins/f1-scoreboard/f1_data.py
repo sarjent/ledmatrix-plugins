@@ -26,27 +26,6 @@ ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/racing/f1"
 JOLPI_BASE = "https://api.jolpi.ca/ergast/f1"
 OPENF1_BASE = "https://api.openf1.org/v1"
 
-# ESPN competition type IDs
-ESPN_SESSION_TYPES = {
-    "1": "Practice",
-    "2": "Qualifying",
-    "3": "Race",
-    "5": "Sprint Shootout",
-    "6": "Sprint Race",
-}
-
-# ESPN session type abbreviations
-ESPN_SESSION_ABBRS = {
-    "FP1": "Practice",
-    "FP2": "Practice",
-    "FP3": "Practice",
-    "Qual": "Qualifying",
-    "Race": "Race",
-    "SS": "Sprint Shootout",
-    "SR": "Sprint Race",
-}
-
-
 class F1DataSource:
     """Fetches and processes F1 data from ESPN, Jolpi, and OpenF1 APIs."""
 
@@ -130,16 +109,21 @@ class F1DataSource:
 
     def _fallback_previous_season(self, method_name: str, season: int,
                                    default_return=None, **kwargs):
-        """Fall back to previous season when current has no data (pre-season)."""
+        """Fall back to previous season when current has no data (pre-season).
+
+        Performs a single bounded fallback to (current_year - 1) to avoid
+        recursive HTTP requests through multiple empty seasons.
+        """
         current_year = datetime.now(timezone.utc).year
         if season >= current_year and season > 2000:
             method = getattr(self, method_name, None)
             if method is None or not callable(method):
                 logger.error("Invalid fallback method: %s", method_name)
                 return default_return
+            target = current_year - 1
             logger.info("No %s data for %d, falling back to %d",
-                       method_name, season, season - 1)
-            return method(season=season - 1, **kwargs)
+                       method_name, season, target)
+            return method(season=target, **kwargs)
         return default_return
 
     # ─── ESPN: Schedule & Calendar ─────────────────────────────────────
@@ -385,6 +369,15 @@ class F1DataSource:
             if not standings_lists:
                 return self._fallback_previous_season(
                     "fetch_driver_standings", season, default_return=[])
+
+            # Populate round cache so _get_latest_round skips HTTP request
+            try:
+                round_num = int(standings_lists[0].get("round", 0))
+                if round_num > 0:
+                    self._latest_round_cache[season] = (
+                        time.time(), round_num)
+            except (ValueError, TypeError):
+                pass
 
             for entry in standings_lists[0].get("DriverStandings", []):
                 driver = entry.get("Driver", {})
@@ -933,8 +926,7 @@ class F1DataSource:
 
             # Map team name to constructor ID
             team_name = info.get("team", "")
-            constructor_id = normalize_constructor_id(
-                team_name.lower().replace(" ", "_"))
+            constructor_id = normalize_constructor_id(team_name)
 
             results.append({
                 "position": i + 1,
