@@ -377,14 +377,21 @@ class F1Renderer:
 
         return img
 
-    # ─── Qualifying Results Card ───────────────────────────────────────
+    # ─── Shared Driver Row Helper ─────────────────────────────────────
 
-    def render_qualifying_entry(self, entry: Dict,
-                                 session_label: str = "Q3") -> Image.Image:
+    def _render_driver_row(self, entry: Dict, time_key: str = "",
+                           gap_key: str = "",
+                           show_eliminated: bool = False) -> Image.Image:
         """
-        Render a single qualifying result entry.
+        Render a common driver row card used by qualifying, practice, sprint.
 
         Layout: [accent bar] [pos] [code] [time] [gap] [team logo]
+
+        Args:
+            entry: Driver entry dict
+            time_key: Key for the time field (e.g. "best_lap", "time")
+            gap_key: Key for the gap field (e.g. "gap")
+            show_eliminated: Whether to show "OUT" for eliminated entries
         """
         img = Image.new("RGBA",
                         (self.display_width, self.display_height),
@@ -412,12 +419,9 @@ class F1Renderer:
         code_width = self._get_text_width(draw, code, self.fonts["position"])
         x_offset += code_width + 4
 
-        # Get the appropriate time for this Q session
-        session_key = session_label.lower()
-        time_str = entry.get(session_key, "")
-        gap_str = entry.get(f"{session_key}_gap", "")
-
         # Time
+        time_str = entry.get(time_key, "") if time_key else ""
+        time_width = 0
         if time_str:
             self._draw_text_outlined(draw, (x_offset, 2), time_str,
                                     self.fonts["detail"],
@@ -425,8 +429,7 @@ class F1Renderer:
             time_width = self._get_text_width(draw, time_str,
                                              self.fonts["detail"])
             x_offset += time_width + 4
-        else:
-            # No time = eliminated or no run
+        elif show_eliminated:
             eliminated = entry.get("eliminated_in", "")
             if eliminated:
                 self._draw_text_outlined(draw, (x_offset, 2), "OUT",
@@ -434,13 +437,14 @@ class F1Renderer:
                                         fill=(255, 80, 80))
 
         # Gap to leader
+        gap_str = entry.get(gap_key, "") if gap_key else ""
         if gap_str:
             gap_y = 2 + self._get_text_height(draw, "1:00",
                                               self.fonts["detail"]) + 2
             if gap_y + 6 < self.display_height:
-                self._draw_text_outlined(draw, (x_offset - time_width - 4
-                                               if time_str else x_offset,
-                                               gap_y),
+                gap_x = (x_offset - time_width - 4
+                         if time_str else x_offset)
+                self._draw_text_outlined(draw, (gap_x, gap_y),
                                         gap_str, self.fonts["small"],
                                         fill=(255, 200, 0))
 
@@ -455,6 +459,18 @@ class F1Renderer:
             img.paste(logo, (logo_x, logo_y), logo)
 
         return img
+
+    # ─── Qualifying Results Card ───────────────────────────────────────
+
+    def render_qualifying_entry(self, entry: Dict,
+                                 session_label: str = "Q3") -> Image.Image:
+        """Render a single qualifying result entry."""
+        session_key = session_label.lower()
+        return self._render_driver_row(
+            entry,
+            time_key=session_key,
+            gap_key=f"{session_key}_gap",
+            show_eliminated=True)
 
     def render_qualifying_header(self,
                                   session_label: str = "Q3",
@@ -494,65 +510,9 @@ class F1Renderer:
     # ─── Practice Results Card ─────────────────────────────────────────
 
     def render_practice_entry(self, entry: Dict) -> Image.Image:
-        """
-        Render a practice session result entry.
-
-        Layout: [accent bar] [pos] [code] [best lap] [gap] [team logo]
-        """
-        img = Image.new("RGBA",
-                        (self.display_width, self.display_height),
-                        (0, 0, 0, 255))
-        draw = ImageDraw.Draw(img)
-
-        constructor_id = entry.get("constructor_id", "")
-        self._draw_accent_bar(draw, constructor_id)
-
-        x_offset = self.accent_bar_width + 2
-
-        # Position
-        pos_text = f"P{entry.get('position', '?')}"
-        self._draw_text_outlined(draw, (x_offset, 2), pos_text,
-                                self.fonts["position"],
-                                fill=(255, 255, 255))
-        pos_width = self._get_text_width(draw, pos_text, self.fonts["position"])
-        x_offset += pos_width + 4
-
-        # Driver code
-        code = entry.get("code", "???")
-        self._draw_text_outlined(draw, (x_offset, 2), code,
-                                self.fonts["position"],
-                                fill=(255, 255, 255))
-        code_width = self._get_text_width(draw, code, self.fonts["position"])
-        x_offset += code_width + 4
-
-        # Best lap time
-        best_lap = entry.get("best_lap", "")
-        if best_lap:
-            self._draw_text_outlined(draw, (x_offset, 2), best_lap,
-                                    self.fonts["detail"],
-                                    fill=(200, 200, 200))
-
-        # Gap
-        gap = entry.get("gap", "")
-        if gap:
-            gap_y = 2 + self._get_text_height(
-                draw, best_lap or "1:00", self.fonts["detail"]) + 2
-            if gap_y + 6 < self.display_height:
-                self._draw_text_outlined(draw, (x_offset, gap_y), gap,
-                                        self.fonts["small"],
-                                        fill=(255, 200, 0))
-
-        # Team logo (right)
-        logo = self.logo_loader.get_team_logo(
-            constructor_id,
-            max_height=int(self.display_height * 0.6),
-            max_width=int(self.display_height * 0.6))
-        if logo:
-            logo_x = self.display_width - logo.width - 2
-            logo_y = (self.display_height - logo.height) // 2
-            img.paste(logo, (logo_x, logo_y), logo)
-
-        return img
+        """Render a practice session result entry."""
+        return self._render_driver_row(
+            entry, time_key="best_lap", gap_key="gap")
 
     def render_practice_header(self, session_name: str = "FP3",
                                 circuit: str = "") -> Image.Image:
@@ -587,49 +547,8 @@ class F1Renderer:
     # ─── Sprint Results Card ───────────────────────────────────────────
 
     def render_sprint_entry(self, entry: Dict) -> Image.Image:
-        """Render a sprint result entry. Same layout as qualifying entry."""
-        img = Image.new("RGBA",
-                        (self.display_width, self.display_height),
-                        (0, 0, 0, 255))
-        draw = ImageDraw.Draw(img)
-
-        constructor_id = entry.get("constructor_id", "")
-        self._draw_accent_bar(draw, constructor_id)
-
-        x_offset = self.accent_bar_width + 2
-
-        pos_text = f"P{entry.get('position', '?')}"
-        self._draw_text_outlined(draw, (x_offset, 2), pos_text,
-                                self.fonts["position"],
-                                fill=(255, 255, 255))
-        pos_width = self._get_text_width(draw, pos_text, self.fonts["position"])
-        x_offset += pos_width + 4
-
-        code = entry.get("code", "???")
-        self._draw_text_outlined(draw, (x_offset, 2), code,
-                                self.fonts["position"],
-                                fill=(255, 255, 255))
-        code_width = self._get_text_width(draw, code, self.fonts["position"])
-        x_offset += code_width + 4
-
-        # Time/gap
-        time_str = entry.get("time", "")
-        if time_str:
-            self._draw_text_outlined(draw, (x_offset, 2), time_str,
-                                    self.fonts["detail"],
-                                    fill=(200, 200, 200))
-
-        # Team logo (right)
-        logo = self.logo_loader.get_team_logo(
-            constructor_id,
-            max_height=int(self.display_height * 0.6),
-            max_width=int(self.display_height * 0.6))
-        if logo:
-            logo_x = self.display_width - logo.width - 2
-            logo_y = (self.display_height - logo.height) // 2
-            img.paste(logo, (logo_x, logo_y), logo)
-
-        return img
+        """Render a sprint result entry."""
+        return self._render_driver_row(entry, time_key="time")
 
     def render_sprint_header(self, race_name: str = "") -> Image.Image:
         """Render a sprint race header card."""

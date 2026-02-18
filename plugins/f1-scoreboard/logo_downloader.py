@@ -88,9 +88,12 @@ class F1LogoLoader:
         self._cache: Dict[str, Image.Image] = {}
 
     def get_team_logo(self, constructor_id: str, max_height: int = 28,
-                      max_width: int = 28) -> Optional[Image.Image]:
+                      max_width: int = 28) -> Image.Image:
         """
         Get a team logo, resized to fit within max dimensions.
+
+        Always returns an image — generates a text placeholder if no
+        logo file exists for the given constructor.
 
         Args:
             constructor_id: Constructor identifier (any format)
@@ -98,7 +101,7 @@ class F1LogoLoader:
             max_width: Maximum width in pixels
 
         Returns:
-            PIL Image in RGBA mode, or None if unavailable
+            PIL Image in RGBA mode
         """
         normalized = normalize_constructor_id(constructor_id)
         cache_key = f"team_{normalized}_{max_width}x{max_height}"
@@ -107,8 +110,7 @@ class F1LogoLoader:
             return self._cache[cache_key]
 
         logo = self._load_logo(normalized, max_width, max_height)
-        if logo is not None:
-            self._cache[cache_key] = logo
+        self._cache[cache_key] = logo
         return logo
 
     def get_f1_logo(self, max_height: int = 12,
@@ -247,9 +249,16 @@ class F1LogoLoader:
 
     @staticmethod
     def _resolve_circuit_filename(circuit_name: str, city: str) -> str:
-        """Resolve a circuit name/city to a filename key."""
+        """Resolve a circuit name/city to a filename key.
+
+        Matches longest keys first to prevent short-key false positives
+        (e.g. 'spa' matching inside a longer unrelated string).
+        """
         combined = f"{circuit_name} {city}".lower()
-        for key, filename in CIRCUIT_FILENAME_MAP.items():
+        # Sort by key length descending so longer, more specific keys match first
+        for key, filename in sorted(CIRCUIT_FILENAME_MAP.items(),
+                                     key=lambda kv: len(kv[0]),
+                                     reverse=True):
             if key in combined:
                 return filename
         return ""

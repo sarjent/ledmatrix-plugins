@@ -12,8 +12,11 @@ from PIL import Image
 
 try:
     from src.common.scroll_helper import ScrollHelper
-except ImportError:
+except ImportError as _scroll_import_err:
     ScrollHelper = None
+    logging.getLogger(__name__).warning(
+        "ScrollHelper not available, scrolling disabled: %s",
+        _scroll_import_err)
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +143,10 @@ class ScrollDisplay:
         """Get the number of content items."""
         return len(self._content_items)
 
+    def get_vegas_items(self) -> List[Image.Image]:
+        """Get the vegas content items for this display."""
+        return self._vegas_content_items
+
 
 class ScrollDisplayManager:
     """
@@ -187,7 +194,7 @@ class ScrollDisplayManager:
         """Collect all vegas content items across all modes."""
         items = []
         for sd in self._scroll_displays.values():
-            items.extend(sd._vegas_content_items)
+            items.extend(sd.get_vegas_items())
         return items
 
     def is_mode_prepared(self, mode_key: str) -> bool:

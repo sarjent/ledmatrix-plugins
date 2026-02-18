@@ -146,7 +146,9 @@ class F1ScoreboardPlugin(BasePlugin):
                 self._pole_positions = (
                     self.data_source.calculate_pole_positions())
 
-                # Add pole count to each driver
+                # Shallow copy entries before adding poles to avoid
+                # mutating the cached standings dicts
+                standings = [dict(e) for e in standings]
                 for entry in standings:
                     code = entry.get("code", "")
                     entry["poles"] = self._pole_positions.get(code, 0)
@@ -194,14 +196,19 @@ class F1ScoreboardPlugin(BasePlugin):
             always_show = self.config.get(
                 "recent_races", {}).get("always_show_favorite", True)
 
+            # Shallow copy race dicts before mutating results to avoid
+            # altering the cached objects from fetch_recent_races
+            filtered_races = []
             for race in races:
+                race_copy = dict(race)
                 results = race.get("results", [])
-                race["results"] = self.data_source.apply_favorite_filter(
+                race_copy["results"] = self.data_source.apply_favorite_filter(
                     results, top_finishers,
                     favorite_driver=self.favorite_driver,
                     always_show_favorite=always_show)
+                filtered_races.append(race_copy)
 
-            self._recent_races = races
+            self._recent_races = filtered_races
 
     def _update_upcoming(self):
         """Update upcoming race data."""
@@ -243,10 +250,11 @@ class F1ScoreboardPlugin(BasePlugin):
 
             result = self.data_source.fetch_practice_results(session_name)
             if result:
-                # Limit to top N
-                if result.get("results"):
-                    result["results"] = result["results"][:top_n]
-                self._practice_results[fp_key] = result
+                # Shallow copy before slicing to avoid mutating cached dict
+                result_copy = dict(result)
+                if result_copy.get("results"):
+                    result_copy["results"] = result_copy["results"][:top_n]
+                self._practice_results[fp_key] = result_copy
 
     def _update_sprint(self):
         """Update sprint race results."""
@@ -255,10 +263,12 @@ class F1ScoreboardPlugin(BasePlugin):
 
         sprint = self.data_source.fetch_sprint_results()
         if sprint:
+            # Shallow copy before slicing to avoid mutating cached dict
+            sprint_copy = dict(sprint)
             top_n = self.config.get("sprint", {}).get("top_finishers", 10)
-            if sprint.get("results"):
-                sprint["results"] = sprint["results"][:top_n]
-            self._sprint = sprint
+            if sprint_copy.get("results"):
+                sprint_copy["results"] = sprint_copy["results"][:top_n]
+            self._sprint = sprint_copy
 
     def _update_calendar(self):
         """Update race calendar."""

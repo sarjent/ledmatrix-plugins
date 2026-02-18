@@ -91,6 +91,9 @@ class F1DataSource:
         # In-memory cache for when no cache_manager
         self._mem_cache: Dict[str, Tuple[float, Any]] = {}
 
+        # Memoize latest round to avoid redundant HTTP requests
+        self._latest_round_cache: Dict[int, Tuple[float, int]] = {}
+
     # ─── Cache Helpers ─────────────────────────────────────────────────
 
     def _get_cached(self, key: str, category: str = "schedule") -> Optional[Any]:
@@ -130,9 +133,12 @@ class F1DataSource:
         """Fall back to previous season when current has no data (pre-season)."""
         current_year = datetime.now(timezone.utc).year
         if season >= current_year and season > 2000:
+            method = getattr(self, method_name, None)
+            if method is None or not callable(method):
+                logger.error("Invalid fallback method: %s", method_name)
+                return default_return
             logger.info("No %s data for %d, falling back to %d",
                        method_name, season, season - 1)
-            method = getattr(self, method_name)
             return method(season=season - 1, **kwargs)
         return default_return
 
@@ -647,12 +653,15 @@ class F1DataSource:
                     else:
                         entry[f"{session_key}_gap"] = ""
 
-            # Determine elimination status
+            # Determine elimination status based on actual entry count
+            total = len(results)
+            q1_cutoff = total - 5   # Bottom 5 eliminated in Q1
+            q2_cutoff = q1_cutoff - 5  # Next 5 eliminated in Q2
             for entry in results:
                 pos = entry["position"]
-                if pos > 15:
+                if pos > q1_cutoff:
                     entry["eliminated_in"] = "Q1"
-                elif pos > 10:
+                elif pos > q2_cutoff:
                     entry["eliminated_in"] = "Q2"
                 else:
                     entry["eliminated_in"] = ""
@@ -961,7 +970,14 @@ class F1DataSource:
     # ─── Helpers ───────────────────────────────────────────────────────
 
     def _get_latest_round(self, season: int) -> int:
-        """Get the latest completed round number for a season."""
+        """Get the latest completed round number for a season (memoized)."""
+        # Return memoized value if fresh (within standings cache duration)
+        max_age = self._cache_durations.get("standings", 3600)
+        if season in self._latest_round_cache:
+            cached_time, round_num = self._latest_round_cache[season]
+            if time.time() - cached_time < max_age:
+                return round_num
+
         data = self._fetch_json(
             f"{JOLPI_BASE}/{season}/driverStandings.json")
         if not data:
@@ -975,7 +991,9 @@ class F1DataSource:
                               .get("StandingsTable", {})
                               .get("StandingsLists", []))
             if standings_lists:
-                return int(standings_lists[0].get("round", 0))
+                round_num = int(standings_lists[0].get("round", 0))
+                self._latest_round_cache[season] = (time.time(), round_num)
+                return round_num
         except (KeyError, IndexError, ValueError):
             pass
         return 0
