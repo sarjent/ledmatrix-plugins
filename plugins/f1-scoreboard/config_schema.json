@@ -11,7 +11,7 @@
       "description": "Enable or disable the F1 scoreboard plugin"
     },
     "display_duration": {
-      "type": "number",
+      "type": "integer",
       "title": "Display Duration",
       "default": 30,
       "minimum": 5,
@@ -30,15 +30,13 @@
       "type": "string",
       "title": "Favorite Team",
       "default": "",
-      "enum": ["", "mclaren", "ferrari", "red_bull", "mercedes", "williams", "aston_martin", "alpine", "haas", "sauber", "rb"],
-      "description": "Favorite constructor/team. This team will always be shown and highlighted in standings."
+      "description": "Favorite constructor/team ID (e.g., mclaren, ferrari, red_bull, mercedes, williams, aston_martin, alpine, haas, sauber, rb). This team will always be shown and highlighted in standings."
     },
     "favorite_driver": {
       "type": "string",
       "title": "Favorite Driver",
       "default": "",
-      "enum": ["", "VER", "NOR", "PIA", "LEC", "SAI", "HAM", "RUS", "ALO", "STR", "GAS", "DOO", "TSU", "LAW", "ALB", "SAR", "HUL", "BEA", "BOT", "ZHO", "OCO", "BOR"],
-      "description": "Favorite driver code. This driver will always be shown and highlighted in standings and results."
+      "description": "Favorite driver code (e.g., VER, NOR, PIA, LEC, SAI, HAM, RUS, ALO, STR). This driver will always be shown and highlighted in standings and results."
     },
     "driver_standings": {
       "type": "object",

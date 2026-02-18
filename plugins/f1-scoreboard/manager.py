@@ -39,8 +39,12 @@ class F1ScoreboardPlugin(BasePlugin):
                         cache_manager, plugin_manager)
 
         # Display dimensions
-        self.display_width = display_manager.matrix.width
-        self.display_height = display_manager.matrix.height
+        if hasattr(display_manager, "matrix") and display_manager.matrix:
+            self.display_width = display_manager.matrix.width
+            self.display_height = display_manager.matrix.height
+        else:
+            self.display_width = getattr(display_manager, "width", 128)
+            self.display_height = getattr(display_manager, "height", 32)
 
         # Favorites
         self.favorite_driver = config.get("favorite_driver", "").upper()
@@ -440,39 +444,33 @@ class F1ScoreboardPlugin(BasePlugin):
         if force_clear:
             self.display_manager.image.paste(
                 Image.new("RGB",
-                          (self.display_manager.matrix.width,
-                           self.display_manager.matrix.height),
+                          (self.display_width, self.display_height),
                           (0, 0, 0)),
                 (0, 0))
 
-        # Re-calculate countdown for live updates
-        self._upcoming_race["countdown_seconds"] = None
-        now = datetime.now(timezone.utc)
-        next_session = None
+        # Work on a shallow copy to avoid mutating cached data
+        upcoming = dict(self._upcoming_race)
+        upcoming["countdown_seconds"] = None
 
-        for session in self._upcoming_race.get("sessions", []):
+        now = datetime.now(timezone.utc)
+        next_session_dt = None
+
+        for session in upcoming.get("sessions", []):
             if session.get("status_state") == "pre" and session.get("date"):
                 try:
-                    session_dt = datetime.fromisoformat(
+                    parsed_dt = datetime.fromisoformat(
                         session["date"].replace("Z", "+00:00"))
-                    if session_dt > now:
-                        next_session = session
+                    if parsed_dt > now:
+                        next_session_dt = parsed_dt
+                        upcoming["countdown_seconds"] = max(
+                            0, (parsed_dt - now).total_seconds())
+                        upcoming["next_session_type"] = session.get(
+                            "type_abbr", "")
                         break
                 except (ValueError, TypeError):
                     continue
 
-        if next_session:
-            try:
-                session_dt = datetime.fromisoformat(
-                    next_session["date"].replace("Z", "+00:00"))
-                self._upcoming_race["countdown_seconds"] = max(
-                    0, (session_dt - now).total_seconds())
-                self._upcoming_race["next_session_type"] = next_session.get(
-                    "type_abbr", "")
-            except (ValueError, TypeError):
-                pass
-
-        card = self.renderer.render_upcoming_race(self._upcoming_race)
+        card = self.renderer.render_upcoming_race(upcoming)
         self.display_manager.image.paste(card, (0, 0))
         self.display_manager.update_display()
         return True
@@ -509,9 +507,8 @@ class F1ScoreboardPlugin(BasePlugin):
         }
         for mode_key, data in mode_data.items():
             if data and self._scroll_manager.is_mode_prepared(mode_key):
-                sd = self._scroll_manager._scroll_displays.get(mode_key)
-                if sd:
-                    images.extend(sd.get_vegas_items())
+                images.extend(
+                    self._scroll_manager.get_vegas_items_for_mode(mode_key))
 
         # Add upcoming race card if available
         if self._upcoming_race:
@@ -621,6 +618,6 @@ class F1ScoreboardPlugin(BasePlugin):
         try:
             self.logo_loader.clear_cache()
             self.logger.info("F1 Scoreboard cleanup completed")
-        except Exception as e:
-            self.logger.error("Error during cleanup: %s", e)
+        except Exception:
+            self.logger.exception("Error during F1 Scoreboard cleanup")
         super().cleanup()

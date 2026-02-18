@@ -43,7 +43,7 @@ class ScrollDisplay:
             self.display_width = getattr(display_manager, "width", 128)
             self.display_height = getattr(display_manager, "height", 32)
 
-        # Initialize ScrollHelper
+        # Initialize ScrollHelper with config-driven parameters
         self.scroll_helper = None
         if ScrollHelper:
             self.scroll_helper = ScrollHelper(
@@ -51,13 +51,19 @@ class ScrollDisplay:
                 self.display_height,
                 self.logger
             )
-            self.scroll_helper.set_frame_based_scrolling(True)
-            self.scroll_helper.set_scroll_speed(1)
-            self.scroll_helper.set_scroll_delay(0.03)
+            scroll_cfg = self.config.get("scroll", {})
+            if not isinstance(scroll_cfg, dict):
+                scroll_cfg = {}
+            self.scroll_helper.set_frame_based_scrolling(
+                scroll_cfg.get("frame_based", True))
+            self.scroll_helper.set_scroll_speed(
+                scroll_cfg.get("scroll_speed", 1))
+            self.scroll_helper.set_scroll_delay(
+                scroll_cfg.get("scroll_delay", 0.03))
             self.scroll_helper.set_dynamic_duration_settings(
                 enabled=True,
-                min_duration=15,
-                max_duration=120,
+                min_duration=scroll_cfg.get("min_duration", 15),
+                max_duration=scroll_cfg.get("max_duration", 120),
                 buffer=self.display_width
             )
 
@@ -149,6 +155,12 @@ class ScrollDisplay:
         """Get the number of content items."""
         return len(self._content_items)
 
+    def is_scroll_complete(self) -> bool:
+        """Check if the scroll cycle has completed."""
+        if not self.scroll_helper or not self._is_prepared:
+            return True
+        return self.scroll_helper.is_scroll_complete()
+
     def get_vegas_items(self) -> List[Image.Image]:
         """Get the vegas content items for this display."""
         return self._vegas_content_items
@@ -213,7 +225,10 @@ class ScrollDisplayManager:
         """Check if a mode's scroll cycle has completed."""
         if mode_key not in self._scroll_displays:
             return True
-        sd = self._scroll_displays[mode_key]
-        if not sd.scroll_helper or not sd.is_prepared():
-            return True
-        return sd.scroll_helper.is_scroll_complete()
+        return self._scroll_displays[mode_key].is_scroll_complete()
+
+    def get_vegas_items_for_mode(self, mode_key: str) -> List[Image.Image]:
+        """Get vegas content items for a specific mode."""
+        if mode_key not in self._scroll_displays:
+            return []
+        return self._scroll_displays[mode_key].get_vegas_items()
