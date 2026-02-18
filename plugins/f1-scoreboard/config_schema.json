@@ -1,0 +1,337 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "F1 Scoreboard Plugin Configuration",
+  "description": "Configuration schema for the F1 Scoreboard plugin - displays Formula 1 standings, race results, qualifying, practice, sprint results, upcoming races, and race calendar",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable or disable the F1 scoreboard plugin"
+    },
+    "display_duration": {
+      "type": "number",
+      "default": 30,
+      "minimum": 5,
+      "maximum": 300,
+      "description": "Duration in seconds for the display controller to show each plugin mode before rotating"
+    },
+    "update_interval": {
+      "type": "integer",
+      "default": 3600,
+      "minimum": 60,
+      "maximum": 86400,
+      "description": "How often to fetch new data from APIs in seconds"
+    },
+    "favorite_team": {
+      "type": "string",
+      "default": "",
+      "description": "Favorite constructor/team ID (e.g., 'mclaren', 'ferrari', 'red_bull', 'mercedes', 'williams', 'aston_martin', 'alpine', 'haas', 'sauber', 'rb'). This team will always be shown and highlighted in standings."
+    },
+    "favorite_driver": {
+      "type": "string",
+      "default": "",
+      "description": "Favorite driver code (e.g., 'NOR', 'VER', 'HAM', 'LEC', 'PIA', 'RUS'). This driver will always be shown and highlighted in standings and results."
+    },
+    "driver_standings": {
+      "type": "object",
+      "title": "Driver Standings",
+      "description": "Configuration for current driver championship standings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show driver standings display mode"
+        },
+        "top_n": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 3,
+          "maximum": 22,
+          "description": "Number of top drivers to show in standings"
+        },
+        "always_show_favorite": {
+          "type": "boolean",
+          "default": true,
+          "description": "Always include favorite driver even if outside top N"
+        }
+      }
+    },
+    "constructor_standings": {
+      "type": "object",
+      "title": "Constructor Standings",
+      "description": "Configuration for current constructor championship standings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show constructor standings display mode"
+        },
+        "top_n": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 3,
+          "maximum": 12,
+          "description": "Number of top constructors to show"
+        },
+        "always_show_favorite": {
+          "type": "boolean",
+          "default": true,
+          "description": "Always include favorite team even if outside top N"
+        }
+      }
+    },
+    "recent_races": {
+      "type": "object",
+      "title": "Recent Race Results",
+      "description": "Configuration for recent Grand Prix results",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show recent race results display mode"
+        },
+        "number_of_races": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Number of recent races to show"
+        },
+        "top_finishers": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Number of top finishers to display per race"
+        },
+        "always_show_favorite": {
+          "type": "boolean",
+          "default": true,
+          "description": "Always include favorite driver in results even if outside top N finishers"
+        }
+      }
+    },
+    "upcoming": {
+      "type": "object",
+      "title": "Upcoming Race",
+      "description": "Configuration for the next race weekend display",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show upcoming race display mode"
+        },
+        "show_session_times": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show qualifying and sprint session times in addition to race time"
+        },
+        "countdown_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show live countdown timer to next session"
+        }
+      }
+    },
+    "qualifying": {
+      "type": "object",
+      "title": "Qualifying Results",
+      "description": "Configuration for most recent qualifying session breakdown",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show qualifying results display mode"
+        },
+        "show_q1": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Q1 results (all 20 drivers, bottom 5 eliminated)"
+        },
+        "show_q2": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Q2 results (top 15 drivers, bottom 5 eliminated)"
+        },
+        "show_q3": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Q3 results (top 10 drivers, determines pole position)"
+        },
+        "show_gaps": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show time differential to session leader"
+        }
+      }
+    },
+    "practice": {
+      "type": "object",
+      "title": "Free Practice Results",
+      "description": "Configuration for free practice session standings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show free practice results display mode"
+        },
+        "sessions_to_show": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["FP1", "FP2", "FP3"]
+          },
+          "default": ["FP1", "FP2", "FP3"],
+          "description": "Which free practice sessions to display"
+        },
+        "top_n": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 3,
+          "maximum": 22,
+          "description": "Number of top drivers to show per practice session"
+        }
+      }
+    },
+    "sprint": {
+      "type": "object",
+      "title": "Sprint Race Results",
+      "description": "Configuration for sprint race results (not all race weekends have sprints)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show sprint race results display mode"
+        },
+        "top_finishers": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 3,
+          "maximum": 22,
+          "description": "Number of top finishers to display"
+        }
+      }
+    },
+    "calendar": {
+      "type": "object",
+      "title": "Race Calendar",
+      "description": "Configuration for upcoming race schedule display",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show race calendar display mode"
+        },
+        "show_practice": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include practice sessions in calendar"
+        },
+        "show_qualifying": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include qualifying sessions in calendar"
+        },
+        "show_sprint": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include sprint sessions in calendar"
+        },
+        "max_events": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 24,
+          "description": "Maximum number of upcoming race weekends to show"
+        }
+      }
+    },
+    "customization": {
+      "type": "object",
+      "title": "Display Customization",
+      "description": "Customize fonts for different text elements",
+      "properties": {
+        "header_text": {
+          "type": "object",
+          "title": "Header Text",
+          "description": "Font for section headers (GP names, session labels)",
+          "properties": {
+            "font": {
+              "type": "string",
+              "enum": ["PressStart2P-Regular.ttf", "4x6-font.ttf", "5by7.regular.ttf"],
+              "default": "PressStart2P-Regular.ttf"
+            },
+            "font_size": {
+              "type": "integer",
+              "minimum": 4,
+              "maximum": 16,
+              "default": 8
+            }
+          },
+          "additionalProperties": false
+        },
+        "position_text": {
+          "type": "object",
+          "title": "Position Numbers",
+          "description": "Font for standings position numbers and driver codes",
+          "properties": {
+            "font": {
+              "type": "string",
+              "enum": ["PressStart2P-Regular.ttf", "4x6-font.ttf", "5by7.regular.ttf"],
+              "default": "PressStart2P-Regular.ttf"
+            },
+            "font_size": {
+              "type": "integer",
+              "minimum": 4,
+              "maximum": 16,
+              "default": 8
+            }
+          },
+          "additionalProperties": false
+        },
+        "detail_text": {
+          "type": "object",
+          "title": "Detail Text",
+          "description": "Font for points, times, gaps, and other details",
+          "properties": {
+            "font": {
+              "type": "string",
+              "enum": ["PressStart2P-Regular.ttf", "4x6-font.ttf", "5by7.regular.ttf"],
+              "default": "4x6-font.ttf"
+            },
+            "font_size": {
+              "type": "integer",
+              "minimum": 4,
+              "maximum": 16,
+              "default": 6
+            }
+          },
+          "additionalProperties": false
+        },
+        "small_text": {
+          "type": "object",
+          "title": "Small Text",
+          "description": "Font for secondary information (circuit name, location)",
+          "properties": {
+            "font": {
+              "type": "string",
+              "enum": ["PressStart2P-Regular.ttf", "4x6-font.ttf", "5by7.regular.ttf"],
+              "default": "4x6-font.ttf"
+            },
+            "font_size": {
+              "type": "integer",
+              "minimum": 4,
+              "maximum": 12,
+              "default": 6
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "required": ["enabled"]
+}
