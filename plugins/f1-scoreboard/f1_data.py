@@ -126,7 +126,7 @@ class F1DataSource:
             return None
 
     def _fallback_previous_season(self, method_name: str, season: int,
-                                   **kwargs):
+                                   default_return=None, **kwargs):
         """Fall back to previous season when current has no data (pre-season)."""
         current_year = datetime.now(timezone.utc).year
         if season >= current_year and season > 2000:
@@ -134,7 +134,7 @@ class F1DataSource:
                        method_name, season, season - 1)
             method = getattr(self, method_name)
             return method(season=season - 1, **kwargs)
-        return [] if "standings" in method_name or "races" in method_name else None
+        return default_return
 
     # ─── ESPN: Schedule & Calendar ─────────────────────────────────────
 
@@ -369,7 +369,7 @@ class F1DataSource:
                 f"{JOLPI_BASE}/current/driverStandings.json")
         if not data:
             return self._fallback_previous_season(
-                "fetch_driver_standings", season)
+                "fetch_driver_standings", season, default_return=[])
 
         standings = []
         try:
@@ -378,7 +378,7 @@ class F1DataSource:
                               .get("StandingsLists", []))
             if not standings_lists:
                 return self._fallback_previous_season(
-                    "fetch_driver_standings", season)
+                    "fetch_driver_standings", season, default_return=[])
 
             for entry in standings_lists[0].get("DriverStandings", []):
                 driver = entry.get("Driver", {})
@@ -401,6 +401,7 @@ class F1DataSource:
                 })
         except (KeyError, IndexError, ValueError) as e:
             logger.error("Error parsing driver standings: %s", e)
+            return []
 
         self._set_cached(cache_key, standings)
         return standings
@@ -429,7 +430,7 @@ class F1DataSource:
                 f"{JOLPI_BASE}/current/constructorStandings.json")
         if not data:
             return self._fallback_previous_season(
-                "fetch_constructor_standings", season)
+                "fetch_constructor_standings", season, default_return=[])
 
         standings = []
         try:
@@ -438,7 +439,7 @@ class F1DataSource:
                               .get("StandingsLists", []))
             if not standings_lists:
                 return self._fallback_previous_season(
-                    "fetch_constructor_standings", season)
+                    "fetch_constructor_standings", season, default_return=[])
 
             for entry in standings_lists[0].get("ConstructorStandings", []):
                 constructor = entry.get("Constructor", {})
@@ -454,6 +455,7 @@ class F1DataSource:
                 })
         except (KeyError, IndexError, ValueError) as e:
             logger.error("Error parsing constructor standings: %s", e)
+            return []
 
         self._set_cached(cache_key, standings)
         return standings
@@ -551,27 +553,11 @@ class F1DataSource:
         if cached is not None:
             return cached
 
-        # First get the standings to find out what round we're at
-        standings_data = self._fetch_json(
-            f"{JOLPI_BASE}/{season}/driverStandings.json")
-        if not standings_data:
-            standings_data = self._fetch_json(
-                f"{JOLPI_BASE}/current/driverStandings.json")
-
-        current_round = 0
-        if standings_data:
-            try:
-                standings_lists = (standings_data.get("MRData", {})
-                                  .get("StandingsTable", {})
-                                  .get("StandingsLists", []))
-                if standings_lists:
-                    current_round = int(standings_lists[0].get("round", 0))
-            except (KeyError, IndexError, ValueError):
-                pass
+        current_round = self._get_latest_round(season)
 
         if current_round == 0:
             return self._fallback_previous_season(
-                "fetch_recent_races", season, count=count)
+                "fetch_recent_races", season, default_return=[], count=count)
 
         races = []
         for round_num in range(current_round, max(0, current_round - count), -1):
@@ -1056,8 +1042,10 @@ class F1DataSource:
             if fav_upper not in shown_codes:
                 for entry in entries[top_n:]:
                     if entry.get(driver_key, "").upper() == fav_upper:
-                        entry["is_favorite"] = True
-                        shown.append(entry)
+                        fav_entry = dict(entry)
+                        fav_entry["is_favorite"] = True
+                        shown.append(fav_entry)
+                        shown_codes.add(fav_upper)
                         break
 
         # Add favorite team drivers if not already shown
@@ -1066,10 +1054,11 @@ class F1DataSource:
             if fav_team not in shown_teams:
                 for entry in entries[top_n:]:
                     if entry.get(team_key, "") == fav_team:
-                        if entry.get(driver_key, "").upper() not in shown_codes:
-                            entry["is_favorite"] = True
-                            shown.append(entry)
-                            shown_codes.add(
-                                entry.get(driver_key, "").upper())
+                        code = entry.get(driver_key, "").upper()
+                        if code not in shown_codes:
+                            fav_entry = dict(entry)
+                            fav_entry["is_favorite"] = True
+                            shown.append(fav_entry)
+                            shown_codes.add(code)
 
         return shown

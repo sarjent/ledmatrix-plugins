@@ -30,9 +30,9 @@ class F1Renderer:
     """Renders F1 display cards as PIL Images."""
 
     def __init__(self, display_width: int, display_height: int,
-                 config: Dict[str, Any] = None,
-                 logo_loader: F1LogoLoader = None,
-                 custom_logger: logging.Logger = None):
+                 config: Optional[Dict[str, Any]] = None,
+                 logo_loader: Optional[F1LogoLoader] = None,
+                 custom_logger: Optional[logging.Logger] = None):
         self.display_width = display_width
         self.display_height = display_height
         self.config = config or {}
@@ -84,7 +84,6 @@ class F1Renderer:
             f"assets/fonts/{font_name}",
             str(Path(__file__).parent.parent.parent /
                 "assets" / "fonts" / font_name),
-            f"/var/home/chuck/Github/LEDMatrix/assets/fonts/{font_name}",
         ]
 
         for path in font_paths:
@@ -119,6 +118,17 @@ class F1Renderer:
         """Get the height of rendered text."""
         bbox = draw.textbbox((0, 0), text, font=font)
         return bbox[3] - bbox[1]
+
+    def _truncate_text(self, draw: ImageDraw.ImageDraw, text: str,
+                       font, max_width: int) -> str:
+        """Truncate text to fit within max_width pixels."""
+        if self._get_text_width(draw, text, font) <= max_width:
+            return text
+        while len(text) > 1:
+            text = text[:-1]
+            if self._get_text_width(draw, text + "..", font) <= max_width:
+                return text + ".."
+        return text
 
     # ─── Accent Bar Drawing ───────────────────────────────────────────
 
@@ -697,6 +707,8 @@ class F1Renderer:
         # GP name
         race_name = race.get("short_name", race.get("name", ""))
         short_name = race_name.replace("Grand Prix", "GP")
+        short_name = self._truncate_text(
+            draw, short_name, self.fonts["header"], text_max_x - name_x)
         self._draw_text_outlined(draw, (name_x, y_pos), short_name,
                                 self.fonts["header"],
                                 fill=F1_RED)
@@ -709,6 +721,8 @@ class F1Renderer:
         # Circuit name
         circuit = race.get("circuit_name", "")
         if circuit and y_pos + 6 < self.display_height - 10:
+            circuit = self._truncate_text(
+                draw, circuit, self.fonts["small"], text_max_x - 2)
             self._draw_text_outlined(draw, (2, y_pos), circuit,
                                     self.fonts["small"],
                                     fill=(180, 180, 180))
@@ -724,6 +738,8 @@ class F1Renderer:
         location = ", ".join(location_parts)
 
         if location and y_pos + 6 < self.display_height - 8:
+            location = self._truncate_text(
+                draw, location, self.fonts["small"], text_max_x - 2)
             self._draw_text_outlined(draw, (2, y_pos), location,
                                     self.fonts["small"],
                                     fill=(150, 150, 150))
@@ -745,6 +761,8 @@ class F1Renderer:
                     "SS": "SPRINT QUALI", "SR": "SPRINT RACE",
                 }
                 label = label_map.get(session_type, "RACE DAY")
+                label = self._truncate_text(
+                    draw, label, self.fonts["detail"], text_max_x - 2)
 
                 # Pulsing effect: vary brightness
                 pulse = int(180 + 75 * math.sin(time.time() * 3))
@@ -775,6 +793,8 @@ class F1Renderer:
                         pass
 
                 full_text = date_prefix + countdown_text
+                full_text = self._truncate_text(
+                    draw, full_text, self.fonts["detail"], text_max_x - 2)
                 self._draw_text_outlined(draw, (2, countdown_y), full_text,
                                         self.fonts["detail"],
                                         fill=(0, 255, 0))

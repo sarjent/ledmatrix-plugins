@@ -55,7 +55,8 @@
           "default": true,
           "description": "Always include favorite driver even if outside top N"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "constructor_standings": {
       "type": "object",
@@ -79,7 +80,8 @@
           "default": true,
           "description": "Always include favorite team even if outside top N"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "recent_races": {
       "type": "object",
@@ -110,7 +112,8 @@
           "default": true,
           "description": "Always include favorite driver in results even if outside top N finishers"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "upcoming": {
       "type": "object",
@@ -132,7 +135,8 @@
           "default": true,
           "description": "Show live countdown timer to next session"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "qualifying": {
       "type": "object",
@@ -164,7 +168,8 @@
           "default": true,
           "description": "Show time differential to session leader"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "practice": {
       "type": "object",
@@ -192,7 +197,8 @@
           "maximum": 22,
           "description": "Number of top drivers to show per practice session"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "sprint": {
       "type": "object",
@@ -211,7 +217,8 @@
           "maximum": 22,
           "description": "Number of top finishers to display"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "calendar": {
       "type": "object",
@@ -245,7 +252,8 @@
           "maximum": 24,
           "description": "Maximum number of upcoming race weekends to show"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "customization": {
       "type": "object",

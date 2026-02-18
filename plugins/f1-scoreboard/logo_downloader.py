@@ -46,7 +46,6 @@ CIRCUIT_FILENAME_MAP = {
     "budapest": "budapest",
     "zandvoort": "zandvoort",
     "monza": "monza",
-    "madring": "madrid",
     "madrid": "madrid",
     "baku": "baku",
     "marina bay": "singapore",
@@ -168,8 +167,9 @@ class F1LogoLoader:
                     img.thumbnail((max_width, max_height),
                                 Image.Resampling.LANCZOS)
                     return img
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Failed to load logo variant %s: %s",
+                                 alt_path, e)
 
         # Create placeholder with team color
         color = get_team_color(constructor_id)

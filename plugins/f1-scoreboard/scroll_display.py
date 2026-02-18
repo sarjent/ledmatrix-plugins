@@ -6,7 +6,6 @@ practice, sprint, and calendar cards using ScrollHelper.
 """
 
 import logging
-import time
 from typing import Any, Dict, List, Optional
 
 from PIL import Image
@@ -27,8 +26,8 @@ class ScrollDisplay:
     and manages scroll state.
     """
 
-    def __init__(self, display_manager, config: Dict[str, Any] = None,
-                 custom_logger: logging.Logger = None):
+    def __init__(self, display_manager, config: Optional[Dict[str, Any]] = None,
+                 custom_logger: Optional[logging.Logger] = None):
         self.display_manager = display_manager
         self.config = config or {}
         self.logger = custom_logger or logger
@@ -63,7 +62,6 @@ class ScrollDisplay:
         self._content_items: List[Image.Image] = []
         self._vegas_content_items: List[Image.Image] = []
         self._is_prepared = False
-        self._prepare_time = 0
 
     def prepare_scroll_content(self, cards: List[Image.Image],
                                 separator: Image.Image = None):
@@ -98,7 +96,6 @@ class ScrollDisplay:
             )
 
         self._is_prepared = True
-        self._prepare_time = time.time()
 
     def display_scroll_frame(self, force_clear: bool = False) -> bool:
         """
@@ -149,8 +146,8 @@ class ScrollDisplayManager:
     Manages multiple ScrollDisplay instances, one per display mode.
     """
 
-    def __init__(self, display_manager, config: Dict[str, Any] = None,
-                 custom_logger: logging.Logger = None):
+    def __init__(self, display_manager, config: Optional[Dict[str, Any]] = None,
+                 custom_logger: Optional[logging.Logger] = None):
         self.display_manager = display_manager
         self.config = config or {}
         self.logger = custom_logger or logger

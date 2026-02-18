@@ -24,18 +24,6 @@ F1_TEAM_COLORS = {
 # Aliases for different naming conventions across APIs
 # Jolpi uses constructorId like "mclaren", ESPN may use different names
 _CONSTRUCTOR_ALIASES = {
-    # Jolpi/Ergast constructor IDs
-    "red_bull": "red_bull",
-    "mclaren": "mclaren",
-    "mercedes": "mercedes",
-    "ferrari": "ferrari",
-    "williams": "williams",
-    "aston_martin": "aston_martin",
-    "alpine": "alpine",
-    "haas": "haas",
-    "sauber": "sauber",
-    "rb": "rb",
-    "cadillac": "cadillac",
     # Alternate names from different sources
     "racing_bulls": "rb",
     "rb_f1_team": "rb",

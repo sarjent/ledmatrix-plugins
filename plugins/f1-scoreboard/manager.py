@@ -413,6 +413,14 @@ class F1ScoreboardPlugin(BasePlugin):
         if not self._upcoming_race:
             return
 
+        if force_clear:
+            self.display_manager.image.paste(
+                Image.new("RGB",
+                          (self.display_manager.matrix.width,
+                           self.display_manager.matrix.height),
+                          (0, 0, 0)),
+                (0, 0))
+
         # Re-calculate countdown for live updates
         self._upcoming_race["countdown_seconds"] = None
         now = datetime.now(timezone.utc)
@@ -468,13 +476,6 @@ class F1ScoreboardPlugin(BasePlugin):
 
     def get_vegas_content(self) -> Optional[List[Image.Image]]:
         """Return all rendered cards for Vegas scroll mode."""
-        images = []
-
-        # Ensure content is prepared
-        if not self._scroll_manager.get_all_vegas_content_items():
-            self.update()
-            self._prepare_scroll_content()
-
         images = self._scroll_manager.get_all_vegas_content_items()
 
         # Add upcoming race card if available
