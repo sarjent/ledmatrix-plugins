@@ -625,6 +625,31 @@
       "latest_version": "1.0.0"
     },
     {
+      "id": "f1-scoreboard",
+      "name": "F1 Scoreboard",
+      "description": "Comprehensive Formula 1 racing display with driver standings, constructor standings, race results, qualifying (Q1/Q2/Q3), free practice, sprint results, upcoming race countdown with circuit outline, and season calendar. Supports favorite team/driver filtering and team color accent bars.",
+      "author": "ChuckBuilds",
+      "category": "sports",
+      "tags": [
+        "f1",
+        "formula1",
+        "racing",
+        "sports",
+        "standings",
+        "scoreboard",
+        "motorsport"
+      ],
+      "repo": "https://github.com/ChuckBuilds/ledmatrix-plugins",
+      "branch": "main",
+      "plugin_path": "plugins/f1-scoreboard",
+      "stars": 0,
+      "downloads": 0,
+      "last_updated": "2026-02-17",
+      "verified": true,
+      "screenshot": "",
+      "latest_version": "1.0.0"
+    },
+    {
       "id": "web-ui-info",
       "name": "Web UI Info",
       "description": "Displays the web UI URL for easy access. Shows 'visit web ui at http://[deviceID]:5000'",
