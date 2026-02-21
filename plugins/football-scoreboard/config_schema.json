@@ -599,9 +599,8 @@
           }
         }
       }
-    }
-  },
-  "customization": {
+    },
+    "customization": {
     "type": "object",
     "title": "Display Customization",
     "description": "Customize fonts for different text elements on the scoreboard",
@@ -996,6 +995,7 @@
     },
     "x-propertyOrder": ["score_text", "period_text", "team_name", "status_text", "detail_text", "rank_text", "layout"],
     "additionalProperties": false
+  }
   },
   "additionalProperties": false,
   "required": ["enabled"]
