@@ -314,7 +314,7 @@ See the [manifest schema](https://github.com/ChuckBuilds/LEDMatrix/blob/main/sch
 
 To add your plugin to the official registry:
 
-1. Open an issue on this repository or reach out on [Discord](https://discord.gg/uW36dVAtcT)
+1. Open an issue on this repository or reach out on [Discord](https://discord.gg/t4JWgmWf)
 2. Include: repository URL, description, screenshots/video
 3. After review, your plugin will be added to the registry
 
