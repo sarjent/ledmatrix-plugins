@@ -453,7 +453,6 @@ class F1ScoreboardPlugin(BasePlugin):
         upcoming["countdown_seconds"] = None
 
         now = datetime.now(timezone.utc)
-        next_session_dt = None
 
         for session in upcoming.get("sessions", []):
             if session.get("status_state") == "pre" and session.get("date"):
@@ -461,7 +460,6 @@ class F1ScoreboardPlugin(BasePlugin):
                     parsed_dt = datetime.fromisoformat(
                         session["date"].replace("Z", "+00:00"))
                     if parsed_dt > now:
-                        next_session_dt = parsed_dt
                         upcoming["countdown_seconds"] = max(
                             0, (parsed_dt - now).total_seconds())
                         upcoming["next_session_type"] = session.get(
