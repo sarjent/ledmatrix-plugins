@@ -436,20 +436,10 @@ class F1ScoreboardPlugin(BasePlugin):
             self.logger.warning("Unknown display mode: %s", display_mode)
             return False
 
-    def _display_upcoming(self, force_clear: bool) -> bool:
-        """Display the upcoming race card (static)."""
-        if not self._upcoming_race:
-            return False
-
-        if force_clear:
-            self.display_manager.image.paste(
-                Image.new("RGB",
-                          (self.display_width, self.display_height),
-                          (0, 0, 0)),
-                (0, 0))
-
-        # Work on a shallow copy to avoid mutating cached data
-        upcoming = dict(self._upcoming_race)
+    def _enrich_upcoming_with_countdown(self,
+                                        race: Dict) -> Dict:
+        """Return a shallow copy of race with fresh countdown_seconds set."""
+        upcoming = dict(race)
         upcoming["countdown_seconds"] = None
 
         now = datetime.now(timezone.utc)
@@ -468,6 +458,21 @@ class F1ScoreboardPlugin(BasePlugin):
                 except (ValueError, TypeError):
                     continue
 
+        return upcoming
+
+    def _display_upcoming(self, force_clear: bool) -> bool:
+        """Display the upcoming race card (static)."""
+        if not self._upcoming_race:
+            return False
+
+        if force_clear:
+            self.display_manager.image.paste(
+                Image.new("RGB",
+                          (self.display_width, self.display_height),
+                          (0, 0, 0)),
+                (0, 0))
+
+        upcoming = self._enrich_upcoming_with_countdown(self._upcoming_race)
         card = self.renderer.render_upcoming_race(upcoming)
         self.display_manager.image.paste(card, (0, 0))
         self.display_manager.update_display()
@@ -511,7 +516,7 @@ class F1ScoreboardPlugin(BasePlugin):
         # Add upcoming race card if available
         if self._upcoming_race:
             upcoming_card = self.renderer.render_upcoming_race(
-                self._upcoming_race)
+                self._enrich_upcoming_with_countdown(self._upcoming_race))
             images.insert(0, upcoming_card)
 
         return images if images else None
