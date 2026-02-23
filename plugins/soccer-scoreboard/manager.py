@@ -345,7 +345,7 @@ class SoccerScoreboardPlugin(BasePlugin if BasePlugin else object):
         leagues_config = self.config.get('leagues', {})
         league_config = leagues_config.get(league_key, {})
         
-        self.logger.debug(f"DEBUG: league_config for {league_key} = {league_config}")
+        self.logger.debug(f"league_config for {league_key} = {league_config}")
 
         # Extract nested configurations
         display_modes_config = league_config.get("display_modes", {})

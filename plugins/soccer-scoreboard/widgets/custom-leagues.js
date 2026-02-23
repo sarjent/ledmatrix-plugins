@@ -47,7 +47,6 @@
          * Render the custom leagues widget
          */
         render: function(container, config, value, options) {
-            console.log('[CustomLeaguesWidget] Render called (server-side rendered)');
         },
 
         /**
@@ -427,5 +426,4 @@
         }
     };
 
-    console.log('[CustomLeaguesWidget] Custom leagues widget registered (soccer-scoreboard plugin)');
 })();
