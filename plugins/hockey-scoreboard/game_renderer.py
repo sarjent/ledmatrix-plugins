@@ -209,10 +209,10 @@ class GameRenderer:
                     else:
                         logo = logo_file.copy()
 
-                # Resize logo to fill display height, capped at card width to prevent overflow
-                max_height = self.display_height
-                max_width = self.display_width
-                logo.thumbnail((max_width, max_height), RESAMPLE_FILTER)
+                # Size logo proportionally: scale with height but cap at 1/3 card width
+                # so scores remain readable on tall displays (128x64, 128x128, etc.)
+                logo_size = min(self.display_height, self.display_width // 3)
+                logo.thumbnail((logo_size, logo_size), RESAMPLE_FILTER)
 
                 self._logo_cache[cache_key] = logo
                 return logo
