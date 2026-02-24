@@ -226,10 +226,9 @@ class GameRenderer:
                     if img.mode != "RGBA":
                         img = img.convert("RGBA")
 
-                    # Resize logo to fill display height, capped at half card width
-                    # so both logos never overlap the center score area
+                    # Resize logo to fill display height, capped at card width to prevent overflow
                     max_height = self.display_height
-                    max_width = min(self.display_height, self.display_width // 2)
+                    max_width = self.display_width
                     img.thumbnail((max_width, max_height), resample=RESAMPLE_FILTER)
 
                     # Copy before context manager closes file handle
@@ -247,7 +246,7 @@ class GameRenderer:
                             img = img.convert("RGBA")
 
                         max_height = self.display_height
-                        max_width = min(self.display_height, self.display_width // 2)
+                        max_width = self.display_width
                         img.thumbnail((max_width, max_height), resample=RESAMPLE_FILTER)
 
                         # Copy before context manager closes file handle
