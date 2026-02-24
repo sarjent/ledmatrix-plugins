@@ -180,11 +180,14 @@ class GameRenderer:
                 if logo.mode != "RGBA":
                     logo = logo.convert("RGBA")
                 
-                # Size logo proportionally: scale with height but cap at 1/3 card width
-                # so scores remain readable on tall displays (128x64, 128x128, etc.)
-                logo_size = min(self.display_height, self.display_width // 3)
-                logo.thumbnail((logo_size, logo_size), Image.Resampling.LANCZOS)
-                
+                # Crop transparent padding then scale so ink fills display_height.
+                # thumbnail into a display_height square box preserves aspect ratio
+                # and prevents wide logos from exceeding their half-card slot.
+                bbox = logo.getbbox()
+                if bbox:
+                    logo = logo.crop(bbox)
+                logo.thumbnail((self.display_height, self.display_height), Image.Resampling.LANCZOS)
+
                 self._logo_cache[team_abbrev] = logo
                 return logo
             else:
@@ -326,23 +329,15 @@ class GameRenderer:
             )
             return main_img.convert('RGB')
         
-        # Calculate maximum dimensions for each logo based on available space
-        away_max_width, away_max_height = self._calculate_max_logo_dimensions(score_width, 'away')
-        home_max_width, home_max_height = self._calculate_max_logo_dimensions(score_width, 'home')
-        
-        # Resize logos to fit within their allocated space
-        away_logo = self._resize_logo_to_fit(away_logo, away_max_width, away_max_height)
-        home_logo = self._resize_logo_to_fit(home_logo, home_max_width, home_max_height)
-        
         center_y = self.display_height // 2
-        
-        # Calculate logo positions - ensure they stay on screen
-        # Away logo: positioned from left edge with padding
-        away_x = 10
+
+        # Place logos — each centered within a display_height-wide slot on its side
+        logo_slot = self.display_height
+        away_x = (logo_slot - away_logo.width) // 2
         away_y = center_y - (away_logo.height // 2)
-        
-        # Home logo: positioned from right edge with padding
-        home_x = self.display_width - home_logo.width - 10
+
+        home_slot_start = self.display_width - logo_slot
+        home_x = home_slot_start + (logo_slot - home_logo.width) // 2
         home_y = center_y - (home_logo.height // 2)
         
         # Draw logos

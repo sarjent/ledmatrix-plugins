@@ -1,7 +1,7 @@
 {
   "id": "ufc-scoreboard",
   "name": "UFC Scoreboard",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "author": "LegoGuy1000",
   "contributors": [
     {
@@ -32,6 +32,11 @@
   "default_duration": 15,
   "config_schema": "config_schema.json",
   "versions": [
+    {
+      "version": "1.2.2",
+      "ledmatrix_min": "2.0.0",
+      "released": "2026-02-24"
+    },
     {
       "version": "1.2.1",
       "ledmatrix_min": "2.0.0",
@@ -64,7 +69,7 @@
       "released": "2026-02-12"
     }
   ],
-  "last_updated": "2026-02-15",
+  "last_updated": "2026-02-24",
   "stars": 0,
   "downloads": 0,
   "verified": true,

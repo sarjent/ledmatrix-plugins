@@ -105,10 +105,13 @@ class GameRenderer:
                 if logo.mode != 'RGBA':
                     logo = logo.convert('RGBA')
 
-                # Size logo proportionally: scale with height but cap at 1/3 card width
-                # so scores remain readable on tall displays (128x64, 128x128, etc.)
-                logo_size = min(self.display_height, self.display_width // 3)
-                logo.thumbnail((logo_size, logo_size), RESAMPLE_FILTER)
+                # Crop transparent padding then scale so ink fills display_height.
+                # thumbnail into a display_height square box preserves aspect ratio
+                # and prevents wide logos from exceeding their half-card slot.
+                bbox = logo.getbbox()
+                if bbox:
+                    logo = logo.crop(bbox)
+                logo.thumbnail((self.display_height, self.display_height), RESAMPLE_FILTER)
 
                 # Copy before exiting context manager
                 cached_logo = logo.copy()
@@ -170,8 +173,11 @@ class GameRenderer:
             center_y = self.display_height // 2
 
             # Logos
-            main_img.paste(home_logo, (self.display_width - home_logo.width, center_y - home_logo.height // 2), home_logo)
-            main_img.paste(away_logo, (0, center_y - away_logo.height // 2), away_logo)
+            logo_slot = self.display_height
+            away_x = (logo_slot - away_logo.width) // 2
+            main_img.paste(away_logo, (away_x, center_y - away_logo.height // 2), away_logo)
+            home_x = (self.display_width - logo_slot) + (logo_slot - home_logo.width) // 2
+            main_img.paste(home_logo, (home_x, center_y - home_logo.height // 2), home_logo)
 
             # Inning indicator (top center)
             inning_half = game.get('inning_half', 'top')
@@ -311,8 +317,11 @@ class GameRenderer:
             center_y = self.display_height // 2
 
             # Logos (tighter fit for recent)
-            main_img.paste(home_logo, (self.display_width - home_logo.width, center_y - home_logo.height // 2), home_logo)
-            main_img.paste(away_logo, (0, center_y - away_logo.height // 2), away_logo)
+            logo_slot = self.display_height
+            away_x = (logo_slot - away_logo.width) // 2
+            main_img.paste(away_logo, (away_x, center_y - away_logo.height // 2), away_logo)
+            home_x = (self.display_width - logo_slot) + (logo_slot - home_logo.width) // 2
+            main_img.paste(home_logo, (home_x, center_y - home_logo.height // 2), home_logo)
 
             # "Final" (top center)
             status_text = "Final"
@@ -357,8 +366,11 @@ class GameRenderer:
             center_y = self.display_height // 2
 
             # Logos (tighter fit)
-            main_img.paste(home_logo, (self.display_width - home_logo.width, center_y - home_logo.height // 2), home_logo)
-            main_img.paste(away_logo, (0, center_y - away_logo.height // 2), away_logo)
+            logo_slot = self.display_height
+            away_x = (logo_slot - away_logo.width) // 2
+            main_img.paste(away_logo, (away_x, center_y - away_logo.height // 2), away_logo)
+            home_x = (self.display_width - logo_slot) + (logo_slot - home_logo.width) // 2
+            main_img.paste(home_logo, (home_x, center_y - home_logo.height // 2), home_logo)
 
             # "Next Game" (top center)
             status_font = self.fonts['status'] if self.display_width <= 128 else self.fonts['time']
