@@ -450,7 +450,7 @@
       "additionalProperties": false
     }
   },
-  "x-propertyOrder": ["enabled", "display_duration", "update_interval", "favorite_team", "favorite_driver", "driver_standings", "constructor_standings", "recent_races", "upcoming", "qualifying", "practice", "sprint", "calendar", "dynamic_duration", "customization"],
+  "x-propertyOrder": ["enabled", "display_duration", "update_interval", "favorite_team", "favorite_driver", "driver_standings", "constructor_standings", "recent_races", "upcoming", "qualifying", "practice", "sprint", "calendar", "dynamic_duration", "scroll", "customization"],
   "additionalProperties": false,
   "required": ["enabled"]
 }

@@ -93,8 +93,10 @@
               "enum": ["switch", "scroll"],
               "default": "switch",
               "description": "Display mode for upcoming fights"
-            },
-            "scroll_settings": {
+            }
+          }
+        },
+        "scroll_settings": {
               "type": "object",
               "title": "Scroll Settings",
               "description": "Settings for scroll display mode (when display mode is set to 'scroll')",
@@ -138,8 +140,6 @@
                   "description": "Width of each fight card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more fights simultaneously."
                 }
               }
-            }
-          }
         },
         "live_priority": {
           "type": "boolean",
