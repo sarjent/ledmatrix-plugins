@@ -173,7 +173,7 @@ class GameRenderer:
             center_y = self.display_height // 2
 
             # Logos
-            logo_slot = self.display_height
+            logo_slot = min(self.display_height, self.display_width // 2)
             away_x = (logo_slot - away_logo.width) // 2
             main_img.paste(away_logo, (away_x, center_y - away_logo.height // 2), away_logo)
             home_x = (self.display_width - logo_slot) + (logo_slot - home_logo.width) // 2
@@ -317,7 +317,7 @@ class GameRenderer:
             center_y = self.display_height // 2
 
             # Logos (tighter fit for recent)
-            logo_slot = self.display_height
+            logo_slot = min(self.display_height, self.display_width // 2)
             away_x = (logo_slot - away_logo.width) // 2
             main_img.paste(away_logo, (away_x, center_y - away_logo.height // 2), away_logo)
             home_x = (self.display_width - logo_slot) + (logo_slot - home_logo.width) // 2
@@ -366,7 +366,7 @@ class GameRenderer:
             center_y = self.display_height // 2
 
             # Logos (tighter fit)
-            logo_slot = self.display_height
+            logo_slot = min(self.display_height, self.display_width // 2)
             away_x = (logo_slot - away_logo.width) // 2
             main_img.paste(away_logo, (away_x, center_y - away_logo.height // 2), away_logo)
             home_x = (self.display_width - logo_slot) + (logo_slot - home_logo.width) // 2

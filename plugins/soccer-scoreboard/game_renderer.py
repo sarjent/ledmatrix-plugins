@@ -331,8 +331,9 @@ class GameRenderer:
         
         center_y = self.display_height // 2
 
-        # Place logos — each centered within a display_height-wide slot on its side
-        logo_slot = self.display_height
+        # Place logos — each centered within a slot on its side; cap at half the card
+        # width so home_slot_start stays non-negative on square/tall displays
+        logo_slot = min(self.display_height, self.display_width // 2)
         away_x = (logo_slot - away_logo.width) // 2
         away_y = center_y - (away_logo.height // 2)
 

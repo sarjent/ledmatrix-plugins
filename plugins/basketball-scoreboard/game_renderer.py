@@ -248,8 +248,10 @@ class GameRenderer:
                         if img.mode != "RGBA":
                             img = img.convert("RGBA")
 
-                        logo_size = min(self.display_height, self.display_width // 3)
-                        img.thumbnail((logo_size, logo_size), resample=RESAMPLE_FILTER)
+                        bbox = img.getbbox()
+                        if bbox:
+                            img = img.crop(bbox)
+                        img.thumbnail((self.display_height, self.display_height), resample=RESAMPLE_FILTER)
 
                         # Copy before context manager closes file handle
                         logo = img.copy()
@@ -336,8 +338,9 @@ class GameRenderer:
         
         center_y = self.display_height // 2
         
-        # Draw logos — each centered within a display_height-wide slot on its side
-        logo_slot = self.display_height
+        # Draw logos — each centered within a slot on its side; cap at half the card
+        # width so home_slot_start stays non-negative on square/tall displays
+        logo_slot = min(self.display_height, self.display_width // 2)
         away_x = (logo_slot - away_logo.width) // 2
         away_y = center_y - (away_logo.height // 2)
         main_img.paste(away_logo, (away_x, away_y), away_logo)
