@@ -199,7 +199,7 @@
       "last_updated": "2026-02-24",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.2.0"
+      "latest_version": "1.2.1"
     },
     {
       "id": "football-scoreboard",
@@ -224,7 +224,7 @@
       "last_updated": "2026-02-24",
       "verified": true,
       "screenshot": "",
-      "latest_version": "2.3.0"
+      "latest_version": "2.3.1"
     },
     {
       "id": "ufc-scoreboard",
@@ -248,7 +248,7 @@
       "last_updated": "2026-02-24",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.2.0"
+      "latest_version": "1.2.1"
     },
     {
       "id": "basketball-scoreboard",
@@ -273,7 +273,7 @@
       "last_updated": "2026-02-24",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.5.0"
+      "latest_version": "1.5.1"
     },
     {
       "id": "baseball-scoreboard",
@@ -299,7 +299,7 @@
       "last_updated": "2026-02-24",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.5.0"
+      "latest_version": "1.5.1"
     },
     {
       "id": "soccer-scoreboard",
@@ -328,7 +328,7 @@
       "last_updated": "2026-02-24",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.4.0"
+      "latest_version": "1.4.1"
     },
     {
       "id": "odds-ticker",
@@ -647,7 +647,7 @@
       "last_updated": "2026-02-24",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.2.0"
+      "latest_version": "1.2.1"
     },
     {
       "id": "web-ui-info",

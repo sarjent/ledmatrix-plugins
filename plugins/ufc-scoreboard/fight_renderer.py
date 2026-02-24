@@ -164,9 +164,10 @@ class FightRenderer:
                     if img.mode != "RGBA":
                         img = img.convert("RGBA")
 
-                    # Scale headshot to fit display height
-                    max_width = int(self.display_width * 1.5)
-                    max_height = int(self.display_height * 1.5)
+                    # Scale headshot to fill display height, capped at half card width
+                    # so both fighters never overlap the center text area
+                    max_height = self.display_height
+                    max_width = min(self.display_height, self.display_width // 2)
                     img.thumbnail((max_width, max_height), LANCZOS)
                     img.load()  # Ensure pixel data is loaded before closing file
                 self._headshot_cache[fighter_id] = img

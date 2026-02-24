@@ -180,9 +180,10 @@ class GameRenderer:
                 if logo.mode != "RGBA":
                     logo = logo.convert("RGBA")
                 
-                # Resize to fit display
-                max_width = int(self.display_width * 1.5)
-                max_height = int(self.display_height * 1.5)
+                # Resize logo to fill display height, capped at half card width
+                # so both logos never overlap the center score area
+                max_height = self.display_height
+                max_width = min(self.display_height, self.display_width // 2)
                 logo.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
                 
                 self._logo_cache[team_abbrev] = logo
