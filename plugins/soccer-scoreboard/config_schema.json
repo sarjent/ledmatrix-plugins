@@ -237,6 +237,13 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Automatically calculate display duration based on content width"
+                },
+                "game_card_width": {
+                  "type": "integer",
+                  "default": 128,
+                  "minimum": 32,
+                  "maximum": 512,
+                  "description": "Width of each game card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more games simultaneously."
                 }
               }
             },
@@ -563,6 +570,13 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Automatically calculate display duration based on content width"
+                },
+                "game_card_width": {
+                  "type": "integer",
+                  "default": 128,
+                  "minimum": 32,
+                  "maximum": 512,
+                  "description": "Width of each game card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more games simultaneously."
                 }
               }
             },
@@ -889,6 +903,13 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Automatically calculate display duration based on content width"
+                },
+                "game_card_width": {
+                  "type": "integer",
+                  "default": 128,
+                  "minimum": 32,
+                  "maximum": 512,
+                  "description": "Width of each game card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more games simultaneously."
                 }
               }
             },
@@ -1215,6 +1236,13 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Automatically calculate display duration based on content width"
+                },
+                "game_card_width": {
+                  "type": "integer",
+                  "default": 128,
+                  "minimum": 32,
+                  "maximum": 512,
+                  "description": "Width of each game card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more games simultaneously."
                 }
               }
             },
@@ -1541,6 +1569,13 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Automatically calculate display duration based on content width"
+                },
+                "game_card_width": {
+                  "type": "integer",
+                  "default": 128,
+                  "minimum": 32,
+                  "maximum": 512,
+                  "description": "Width of each game card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more games simultaneously."
                 }
               }
             },
@@ -1867,6 +1902,13 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Automatically calculate display duration based on content width"
+                },
+                "game_card_width": {
+                  "type": "integer",
+                  "default": 128,
+                  "minimum": 32,
+                  "maximum": 512,
+                  "description": "Width of each game card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more games simultaneously."
                 }
               }
             },
@@ -2193,6 +2235,13 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Automatically calculate display duration based on content width"
+                },
+                "game_card_width": {
+                  "type": "integer",
+                  "default": 128,
+                  "minimum": 32,
+                  "maximum": 512,
+                  "description": "Width of each game card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more games simultaneously."
                 }
               }
             },
@@ -2519,6 +2568,13 @@
                   "type": "boolean",
                   "default": true,
                   "description": "Automatically calculate display duration based on content width"
+                },
+                "game_card_width": {
+                  "type": "integer",
+                  "default": 128,
+                  "minimum": 32,
+                  "maximum": 512,
+                  "description": "Width of each game card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more games simultaneously."
                 }
               }
             },

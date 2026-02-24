@@ -1,7 +1,7 @@
 {
   "id": "f1-scoreboard",
   "name": "F1 Scoreboard",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "ChuckBuilds",
   "class_name": "F1ScoreboardPlugin",
   "entry_point": "manager.py",
@@ -10,7 +10,14 @@
   "plugin_path": "plugins/f1-scoreboard",
   "description": "Formula 1 racing plugin showing driver/constructor standings, race results, qualifying breakdowns, practice standings, sprint results, upcoming races, and race calendar with team-colored displays and favorite driver/team support",
   "category": "sports",
-  "tags": ["f1", "formula1", "racing", "motorsport", "sports", "scoreboard"],
+  "tags": [
+    "f1",
+    "formula1",
+    "racing",
+    "motorsport",
+    "sports",
+    "scoreboard"
+  ],
   "display_modes": [
     "f1_driver_standings",
     "f1_constructor_standings",

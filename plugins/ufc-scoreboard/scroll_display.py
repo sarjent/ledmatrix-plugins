@@ -143,6 +143,7 @@ class ScrollDisplayManager:
             "gap_between_games": 48,
             "show_league_separators": True,
             "dynamic_duration": True,
+            "game_card_width": 128,
         }
 
         ufc_config = self.config.get("ufc", {})
@@ -235,15 +236,16 @@ class ScrollDisplayManager:
         scroll_settings = self._get_scroll_settings()
         gap_between_fights = scroll_settings.get("gap_between_games", 48)
         show_separators = scroll_settings.get("show_league_separators", True)
+        game_card_width = scroll_settings.get("game_card_width", 128)
 
         # Get display options from UFC config
         ufc_config = self.config.get("ufc", {})
         display_options = ufc_config.get("display_options", {})
 
-        # Reuse cached fight renderer
-        if self._renderer is None:
+        # Reuse cached fight renderer; recreate if game_card_width changed
+        if self._renderer is None or getattr(self._renderer, "display_width", None) != game_card_width:
             self._renderer = FightRenderer(
-                self.display_width,
+                game_card_width,
                 self.display_height,
                 self.config,
                 headshot_cache=self._headshot_cache,

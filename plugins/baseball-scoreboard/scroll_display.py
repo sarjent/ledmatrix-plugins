@@ -185,7 +185,8 @@ class ScrollDisplay:
             "scroll_delay": 0.01,
             "gap_between_games": 48,
             "show_league_separators": True,
-            "dynamic_duration": True
+            "dynamic_duration": True,
+            "game_card_width": 128,
         }
 
         # Try to get league-specific settings first
@@ -215,15 +216,21 @@ class ScrollDisplay:
 
         return defaults
 
-    def _get_game_renderer(self) -> Optional[GameRenderer]:
-        """Get or create the cached GameRenderer instance."""
+    def _get_game_renderer(self, game_card_width: int = 128) -> Optional[GameRenderer]:
+        """Get or create the cached GameRenderer instance.
+
+        Args:
+            game_card_width: Width for each game card. Cached renderer is recreated
+                             if this differs from the current renderer's width.
+        """
         if GameRenderer is None:
             self.logger.error("GameRenderer not available")
             return None
 
-        if self._game_renderer is None:
+        # Recreate renderer if card width changed (e.g. config update)
+        if self._game_renderer is None or getattr(self._game_renderer, "display_width", None) != game_card_width:
             self._game_renderer = GameRenderer(
-                self.display_width,
+                game_card_width,
                 self.display_height,
                 self.config,
                 logo_cache=self._logo_cache,
@@ -329,9 +336,11 @@ class ScrollDisplay:
         scroll_settings = self._get_scroll_settings()
         gap_between_games = scroll_settings.get("gap_between_games", 24)
         show_separators = scroll_settings.get("show_league_separators", True)
+        game_card_width = scroll_settings.get("game_card_width", 128)
 
-        # Get or create cached game renderer
-        renderer = self._get_game_renderer()
+        # Get or create cached game renderer using game_card_width so cards are a fixed
+        # size regardless of the full chain width (display_width may span multiple panels)
+        renderer = self._get_game_renderer(game_card_width)
 
         # Pass rankings cache to renderer if available
         if renderer and rankings_cache:

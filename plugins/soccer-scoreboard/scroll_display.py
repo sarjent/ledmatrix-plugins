@@ -143,6 +143,7 @@ class ScrollDisplay:
             'show_league_separators': scroll_config.get('show_league_separators', True),
             'min_duration': scroll_config.get('min_duration', 30),
             'max_duration': scroll_config.get('max_duration', 300),
+            'game_card_width': scroll_config.get('game_card_width', 128),
         }
 
     def _configure_scroll_helper(self) -> None:
@@ -323,10 +324,12 @@ class ScrollDisplay:
         scroll_settings = self._get_scroll_settings()
         gap_between_games = scroll_settings.get("gap_between_games", 24)
         show_separators = scroll_settings.get("show_league_separators", True)
+        game_card_width = scroll_settings.get("game_card_width", 128)
 
-        # Create game renderer
+        # Create game renderer using game_card_width so cards are a fixed size
+        # regardless of the full chain width (display_width may span multiple panels)
         renderer = GameRenderer(
-            self.display_width,
+            game_card_width,
             self.display_height,
             self.config,
             self.plugin_dir

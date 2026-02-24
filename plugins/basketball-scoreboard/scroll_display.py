@@ -179,9 +179,10 @@ class ScrollDisplay:
             "scroll_delay": 0.01,
             "gap_between_games": 48,
             "show_league_separators": True,
-            "dynamic_duration": True
+            "dynamic_duration": True,
+            "game_card_width": 128,
         }
-        
+
         # Try to get league-specific settings first
         if league:
             league_config = self.config.get(league, {})
@@ -330,15 +331,17 @@ class ScrollDisplay:
         scroll_settings = self._get_scroll_settings()
         gap_between_games = scroll_settings.get("gap_between_games", 24)
         show_separators = scroll_settings.get("show_league_separators", True)
+        game_card_width = scroll_settings.get("game_card_width", 128)
 
         # Verify GameRenderer is available
         if GameRenderer is None:
             self.logger.error("GameRenderer not available - cannot prepare scroll content")
             return False
 
-        # Create game renderer
+        # Create game renderer using game_card_width so cards are a fixed size
+        # regardless of the full chain width (display_width may span multiple panels)
         renderer = GameRenderer(
-            self.display_width,
+            game_card_width,
             self.display_height,
             self.config,
             logo_cache=self._logo_cache,

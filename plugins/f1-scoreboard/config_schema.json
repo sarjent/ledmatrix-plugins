@@ -320,6 +320,38 @@
       "x-propertyOrder": ["enabled", "max_duration_seconds"],
       "additionalProperties": false
     },
+    "scroll": {
+      "type": "object",
+      "title": "Scroll Settings",
+      "description": "Settings for scroll display mode",
+      "properties": {
+        "game_card_width": {
+          "type": "integer",
+          "title": "Card Width",
+          "default": 128,
+          "minimum": 32,
+          "maximum": 512,
+          "description": "Width of each card in scroll mode (pixels). Default 128. Set lower on multi-panel chains to show more cards simultaneously."
+        },
+        "scroll_speed": {
+          "type": "number",
+          "title": "Scroll Speed",
+          "default": 1,
+          "minimum": 0.01,
+          "maximum": 10,
+          "description": "Pixels per frame to scroll (frame-based mode)"
+        },
+        "scroll_delay": {
+          "type": "number",
+          "title": "Scroll Delay",
+          "default": 0.03,
+          "minimum": 0.001,
+          "maximum": 0.1,
+          "description": "Delay between scroll frames in seconds"
+        }
+      },
+      "additionalProperties": false
+    },
     "customization": {
       "type": "object",
       "title": "Display Customization",

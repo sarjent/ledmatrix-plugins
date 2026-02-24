@@ -54,11 +54,21 @@ class F1ScoreboardPlugin(BasePlugin):
         # Display duration
         self.display_duration = config.get("display_duration", 30)
 
+        # Scroll card width: use a fixed card width for scroll mode so cards are
+        # properly sized regardless of the full chain width (multi-panel setups)
+        scroll_cfg = config.get("scroll", {}) if isinstance(config.get("scroll"), dict) else {}
+        self._card_width = scroll_cfg.get("game_card_width", 128)
+
         # Initialize components
         self.logo_loader = F1LogoLoader()
         self.data_source = F1DataSource(cache_manager, config)
+        # Full-width renderer for static single-card display
         self.renderer = F1Renderer(
             self.display_width, self.display_height,
+            config, self.logo_loader, self.logger)
+        # Card-width renderer for scroll/Vegas mode
+        self._scroll_renderer = F1Renderer(
+            self._card_width, self.display_height,
             config, self.logo_loader, self.logger)
         self._scroll_manager = ScrollDisplayManager(
             display_manager, config, self.logger)
@@ -297,25 +307,26 @@ class F1ScoreboardPlugin(BasePlugin):
 
     def _prepare_scroll_content(self):
         """Pre-render all scroll mode content."""
-        separator = self.renderer.render_f1_separator()
+        r = self._scroll_renderer
+        separator = r.render_f1_separator()
 
         # Driver standings
         if self._driver_standings:
-            cards = [self.renderer.render_driver_standing(e)
+            cards = [r.render_driver_standing(e)
                     for e in self._driver_standings]
             self._scroll_manager.prepare_and_display(
                 "driver_standings", cards, separator)
 
         # Constructor standings
         if self._constructor_standings:
-            cards = [self.renderer.render_constructor_standing(e)
+            cards = [r.render_constructor_standing(e)
                     for e in self._constructor_standings]
             self._scroll_manager.prepare_and_display(
                 "constructor_standings", cards, separator)
 
         # Recent races
         if self._recent_races:
-            cards = [self.renderer.render_race_result(race)
+            cards = [r.render_race_result(race)
                     for race in self._recent_races]
             self._scroll_manager.prepare_and_display(
                 "recent_races", cards, separator)
@@ -335,16 +346,16 @@ class F1ScoreboardPlugin(BasePlugin):
 
         # Sprint
         if self._sprint and self._sprint.get("results"):
-            cards = [self.renderer.render_sprint_header(
+            cards = [r.render_sprint_header(
                         self._sprint.get("race_name", ""))]
             for entry in self._sprint["results"]:
-                cards.append(self.renderer.render_sprint_entry(entry))
+                cards.append(r.render_sprint_entry(entry))
             self._scroll_manager.prepare_and_display(
                 "sprint", cards, separator)
 
         # Calendar
         if self._calendar:
-            cards = [self.renderer.render_calendar_entry(e)
+            cards = [r.render_calendar_entry(e)
                     for e in self._calendar]
             self._scroll_manager.prepare_and_display(
                 "calendar", cards, separator)
@@ -354,6 +365,7 @@ class F1ScoreboardPlugin(BasePlugin):
         if not self._qualifying:
             return []
 
+        r = self._scroll_renderer
         cards = []
         quali_config = self.config.get("qualifying", {})
         results = self._qualifying.get("results", [])
@@ -368,24 +380,25 @@ class F1ScoreboardPlugin(BasePlugin):
                 continue
 
             # Add session header
-            cards.append(self.renderer.render_qualifying_header(
+            cards.append(r.render_qualifying_header(
                 label, race_name))
 
             # Add entries for this session
             for entry in results:
                 # Only show entries that have a time for this session
                 if entry.get(session_key):
-                    cards.append(self.renderer.render_qualifying_entry(
+                    cards.append(r.render_qualifying_entry(
                         entry, label))
                 elif entry.get("eliminated_in") == label:
                     # Show eliminated driver
-                    cards.append(self.renderer.render_qualifying_entry(
+                    cards.append(r.render_qualifying_entry(
                         entry, label))
 
         return cards
 
     def _build_practice_cards(self) -> List[Image.Image]:
         """Build practice result cards for all configured sessions."""
+        r = self._scroll_renderer
         cards = []
 
         for fp_key in ["FP3", "FP2", "FP1"]:  # Most recent first
@@ -393,11 +406,11 @@ class F1ScoreboardPlugin(BasePlugin):
                 continue
 
             fp_data = self._practice_results[fp_key]
-            cards.append(self.renderer.render_practice_header(
+            cards.append(r.render_practice_header(
                 fp_key, fp_data.get("circuit", "")))
 
             for entry in fp_data.get("results", []):
-                cards.append(self.renderer.render_practice_entry(entry))
+                cards.append(r.render_practice_entry(entry))
 
         return cards
 
@@ -513,9 +526,9 @@ class F1ScoreboardPlugin(BasePlugin):
                 images.extend(
                     self._scroll_manager.get_vegas_items_for_mode(mode_key))
 
-        # Add upcoming race card if available
+        # Add upcoming race card if available (use scroll renderer for consistent card width)
         if self._upcoming_race:
-            upcoming_card = self.renderer.render_upcoming_race(
+            upcoming_card = self._scroll_renderer.render_upcoming_race(
                 self._enrich_upcoming_with_countdown(self._upcoming_race))
             images.insert(0, upcoming_card)
 
@@ -607,8 +620,13 @@ class F1ScoreboardPlugin(BasePlugin):
         self.modes = self._build_enabled_modes()
 
         # Force re-render with new settings
+        scroll_cfg = new_config.get("scroll", {}) if isinstance(new_config.get("scroll"), dict) else {}
+        self._card_width = scroll_cfg.get("game_card_width", 128)
         self.renderer = F1Renderer(
             self.display_width, self.display_height,
+            new_config, self.logo_loader, self.logger)
+        self._scroll_renderer = F1Renderer(
+            self._card_width, self.display_height,
             new_config, self.logo_loader, self.logger)
         self._scroll_manager = ScrollDisplayManager(
             self.display_manager, new_config, self.logger)
