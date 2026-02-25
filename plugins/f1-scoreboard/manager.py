@@ -59,6 +59,10 @@ class F1ScoreboardPlugin(BasePlugin):
         scroll_cfg = config.get("scroll", {}) if isinstance(config.get("scroll"), dict) else {}
         self._card_width = scroll_cfg.get("game_card_width", 128)
 
+        # Resolve timezone: plugin config → global config → UTC.
+        # Inject into config so the renderer can convert UTC API times to local.
+        config["timezone"] = self._resolve_timezone(config, cache_manager)
+
         # Initialize components
         self.logo_loader = F1LogoLoader()
         self.data_source = F1DataSource(cache_manager, config)

@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import pytz
 from PIL import Image, ImageDraw, ImageFont
 
 from logo_downloader import F1LogoLoader
@@ -76,6 +77,16 @@ class F1Renderer:
             int(small_cfg.get("font_size", max(5, int(6 * height_scale)))))
 
         return fonts
+
+    def _to_local_dt(self, utc_iso_str: str) -> datetime:
+        """Parse a UTC ISO datetime string and convert to configured local timezone."""
+        dt = datetime.fromisoformat(utc_iso_str.replace("Z", "+00:00"))
+        tz_str = self.config.get("timezone", "UTC")
+        try:
+            local_tz = pytz.timezone(tz_str)
+        except Exception:
+            local_tz = pytz.UTC
+        return dt.astimezone(local_tz)
 
     def _load_font(self, font_name: str,
                    size: int) -> Union[ImageFont.FreeTypeFont, Any]:
@@ -705,8 +716,7 @@ class F1Renderer:
                 date_prefix = ""
                 if race_date:
                     try:
-                        dt = datetime.fromisoformat(
-                            race_date.replace("Z", "+00:00"))
+                        dt = self._to_local_dt(race_date)
                         date_prefix = dt.strftime("%b %d").upper() + "  "
                     except (ValueError, TypeError):
                         pass
@@ -739,8 +749,7 @@ class F1Renderer:
         day_display = ""
         if date_str:
             try:
-                dt = datetime.fromisoformat(
-                    date_str.replace("Z", "+00:00"))
+                dt = self._to_local_dt(date_str)
                 date_display = dt.strftime("%b %d").upper()
                 day_display = dt.strftime("%a").upper()
             except (ValueError, TypeError):

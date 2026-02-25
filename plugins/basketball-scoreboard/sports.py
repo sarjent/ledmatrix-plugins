@@ -1162,9 +1162,15 @@ class SportsCore(ABC):
                 params = {"limit": 1000}  # No dates parameter
                 self.logger.debug(f"Fetching current games for {self.sport}/{self.league} (no dates)")
             else:
-                now = datetime.now()
+                # ESPN API anchors its schedule calendar to Eastern US time.
+                # Always query using the Eastern date + 1-day lookback to catch
+                # late-night games still in progress from the previous Eastern day.
+                tz = pytz.timezone("America/New_York")
+                now = datetime.now(tz)
+                yesterday = now - timedelta(days=1)
                 formatted_date = now.strftime("%Y%m%d")
-                params = {"dates": formatted_date, "limit": 1000}
+                formatted_date_yesterday = yesterday.strftime("%Y%m%d")
+                params = {"dates": f"{formatted_date_yesterday}-{formatted_date}", "limit": 1000}
                 self.logger.debug(f"Fetching today's games for {self.sport}/{self.league} on date {formatted_date}")
             
             response = self.session.get(
