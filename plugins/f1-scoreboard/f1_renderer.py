@@ -84,7 +84,7 @@ class F1Renderer:
         tz_str = self.config.get("timezone", "UTC")
         try:
             local_tz = pytz.timezone(tz_str)
-        except Exception:
+        except pytz.exceptions.UnknownTimeZoneError:
             local_tz = pytz.UTC
         return dt.astimezone(local_tz)
 

@@ -385,7 +385,12 @@ class GameRenderer:
             if start_time:
                 try:
                     dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
-                    local_tz = pytz.timezone(self.config.get('timezone') or 'UTC')
+                    tz_name = self.config.get('timezone') or 'UTC'
+                    try:
+                        local_tz = pytz.timezone(tz_name)
+                    except pytz.UnknownTimeZoneError:
+                        self.logger.warning("Unknown timezone %r; falling back to UTC", tz_name)
+                        local_tz = pytz.UTC
                     dt_local = dt.astimezone(local_tz)
                     game_date = dt_local.strftime('%b %d')
                     game_time = dt_local.strftime('%-I:%M %p')

@@ -97,10 +97,13 @@ class BaseballScoreboardPlugin(BasePlugin if BasePlugin else object):
         # Inject into self.config so all sub-components (scroll display, game
         # renderer, etc.) can read it via config.get('timezone').
         if not self.config.get("timezone"):
-            try:
-                global_tz = cache_manager.config_manager.get_timezone()
-            except Exception:
-                global_tz = "UTC"
+            global_tz = None
+            config_manager = getattr(cache_manager, "config_manager", None)
+            if config_manager is not None:
+                try:
+                    global_tz = config_manager.get_timezone()
+                except (AttributeError, TypeError):
+                    self.logger.debug("Global timezone unavailable; falling back to UTC")
             self.config["timezone"] = global_tz or "UTC"
 
         # Basic configuration
