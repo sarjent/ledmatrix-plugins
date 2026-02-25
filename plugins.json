@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-02-24",
+  "last_updated": "2026-02-25",
   "plugins": [
     {
       "id": "hello-world",
@@ -196,10 +196,10 @@
       "plugin_path": "plugins/hockey-scoreboard",
       "stars": 0,
       "downloads": 0,
-      "last_updated": "2026-02-24",
+      "last_updated": "2026-02-25",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.2.3"
+      "latest_version": "1.2.4"
     },
     {
       "id": "football-scoreboard",
@@ -221,10 +221,10 @@
       "plugin_path": "plugins/football-scoreboard",
       "stars": 0,
       "downloads": 0,
-      "last_updated": "2026-02-24",
+      "last_updated": "2026-02-25",
       "verified": true,
       "screenshot": "",
-      "latest_version": "2.3.3"
+      "latest_version": "2.3.4"
     },
     {
       "id": "ufc-scoreboard",
@@ -245,10 +245,10 @@
       "plugin_path": "plugins/ufc-scoreboard",
       "stars": 0,
       "downloads": 0,
-      "last_updated": "2026-02-24",
+      "last_updated": "2026-02-25",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.2.2"
+      "latest_version": "1.2.3"
     },
     {
       "id": "basketball-scoreboard",
@@ -270,10 +270,10 @@
       "plugin_path": "plugins/basketball-scoreboard",
       "stars": 0,
       "downloads": 0,
-      "last_updated": "2026-02-24",
+      "last_updated": "2026-02-25",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.5.3"
+      "latest_version": "1.5.4"
     },
     {
       "id": "baseball-scoreboard",
@@ -296,10 +296,10 @@
       "plugin_path": "plugins/baseball-scoreboard",
       "stars": 0,
       "downloads": 0,
-      "last_updated": "2026-02-24",
+      "last_updated": "2026-02-25",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.5.3"
+      "latest_version": "1.5.4"
     },
     {
       "id": "soccer-scoreboard",
@@ -325,10 +325,10 @@
       "plugin_path": "plugins/soccer-scoreboard",
       "stars": 0,
       "downloads": 0,
-      "last_updated": "2026-02-24",
+      "last_updated": "2026-02-25",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.4.3"
+      "latest_version": "1.4.4"
     },
     {
       "id": "odds-ticker",
@@ -644,10 +644,10 @@
       "plugin_path": "plugins/f1-scoreboard",
       "stars": 0,
       "downloads": 0,
-      "last_updated": "2026-02-24",
+      "last_updated": "2026-02-25",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.2.1"
+      "latest_version": "1.2.2"
     },
     {
       "id": "web-ui-info",

@@ -860,14 +860,20 @@ class SportsCore(ABC):
     def _fetch_todays_games(self) -> Optional[Dict]:
         """Fetch only today's games for live updates (not entire season)."""
         try:
-            now = datetime.now()
+            # ESPN API anchors its schedule calendar to Eastern US time.
+            # Always query using the Eastern date + 1-day lookback to catch
+            # late-night games still in progress from the previous Eastern day.
+            tz = pytz.timezone("America/New_York")
+            now = datetime.now(tz)
+            yesterday = now - timedelta(days=1)
             formatted_date = now.strftime("%Y%m%d")
+            formatted_date_yesterday = yesterday.strftime("%Y%m%d")
             # Fetch todays games only
             url = f"https://site.api.espn.com/apis/site/v2/sports/{self.sport}/{self.league}/scoreboard"
             self.logger.debug(f"Fetching today's games for {self.sport}/{self.league} on date {formatted_date}")
             response = self.session.get(
                 url,
-                params={"dates": formatted_date, "limit": 1000},
+                params={"dates": f"{formatted_date_yesterday}-{formatted_date}", "limit": 1000},
                 headers=self.headers,
                 timeout=10,
             )

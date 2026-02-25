@@ -998,10 +998,15 @@ class SportsCore(ABC):
                     self.logger.debug(f"Using cached current scoreboard for {self.sport}/{self.league}")
                     return cached_data
             
-            # For soccer, use today's date
-            now = datetime.now()
+            # ESPN API anchors its schedule calendar to Eastern US time.
+            # Always query using the Eastern date + 1-day lookback to catch
+            # late-night games still in progress from the previous Eastern day.
+            tz = pytz.timezone("America/New_York")
+            now = datetime.now(tz)
+            yesterday = now - timedelta(days=1)
             formatted_date = now.strftime("%Y%m%d")
-            params = {"dates": formatted_date, "limit": 1000}
+            formatted_date_yesterday = yesterday.strftime("%Y%m%d")
+            params = {"dates": f"{formatted_date_yesterday}-{formatted_date}", "limit": 1000}
             self.logger.debug(f"Fetching today's games for {self.sport}/{self.league} on date {formatted_date}")
             
             response = self.session.get(

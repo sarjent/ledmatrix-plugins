@@ -385,7 +385,7 @@ class GameRenderer:
             if start_time:
                 try:
                     dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
-                    local_tz = pytz.timezone(self.config.get('timezone', 'US/Eastern'))
+                    local_tz = pytz.timezone(self.config.get('timezone') or 'UTC')
                     dt_local = dt.astimezone(local_tz)
                     game_date = dt_local.strftime('%b %d')
                     game_time = dt_local.strftime('%-I:%M %p')
