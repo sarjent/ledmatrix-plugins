@@ -28,7 +28,8 @@
       },
       "minItems": 1,
       "default": ["primary"],
-      "description": "List of calendar IDs to fetch events from (use 'primary' for default calendar)"
+      "description": "Calendar IDs to display events from. Click 'Load My Calendars' to select from your Google account.",
+      "x-widget": "google-calendar-picker"
     },
     "credentials_file": {
       "type": "string",

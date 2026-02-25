@@ -370,6 +370,20 @@ class CalendarPlugin(BasePlugin):
             self.logger.error(f"Error building calendar service: {e}")
             return False
     
+    def get_calendars(self) -> list:
+        """Return all calendars accessible via the authenticated Google account."""
+        if not self.service:
+            return []
+        result = self.service.calendarList().list().execute()
+        return [
+            {
+                'id': cal['id'],
+                'summary': cal.get('summary', cal['id']),
+                'primary': cal.get('primary', False),
+            }
+            for cal in result.get('items', [])
+        ]
+
     def update(self) -> None:
         """
         Fetch upcoming calendar events.
@@ -416,7 +430,7 @@ class CalendarPlugin(BasePlugin):
                     self.logger.info(f"Fetched {len(events)} events from calendar: {calendar_id}")
                 
                 except Exception as e:
-                    self.logger.error(f"Error fetching events from {calendar_id}: {e}")
+                    self.logger.error(f"Error fetching events from calendar '{calendar_id}': {e} — verify this calendar ID is correct and accessible under your Google account")
                     continue
             
             # Sort all events by start time
