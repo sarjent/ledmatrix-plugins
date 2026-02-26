@@ -693,8 +693,8 @@ class FlightTrackerPlugin(BasePlugin):
             response = requests.get(url, params=params, headers=self._fr24_headers, timeout=10)
             response.raise_for_status()
             raw = response.json()
-        except Exception as e:
-            logger.error(f"[Flight Tracker] FR24 feed fetch failed: {e}")
+        except Exception:
+            logger.exception("[Flight Tracker] FR24 feed fetch failed")
             return None
 
         current_time = time.time()
@@ -826,8 +826,6 @@ class FlightTrackerPlugin(BasePlugin):
             return
 
         current_time = time.time()
-        active_icao = set(feed.keys())
-
         for icao, new_info in feed.items():
             existing = self.aircraft_data.get(icao, {})
             # Preserve previously fetched detail fields
@@ -1997,8 +1995,8 @@ class FlightTrackerPlugin(BasePlugin):
                     captured = self.display_manager.image
                     if captured is not None:
                         images.append(captured.copy())
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"[Flight Tracker] Failed to render stat slot {slot}: {e}", exc_info=True)
             # Restore state
             self.current_stat = saved_stat
             self.last_stat_change = saved_time
@@ -2329,7 +2327,6 @@ class FlightTrackerPlugin(BasePlugin):
         is_small_display = dsize in ('tiny', 'small')
 
         # Get statistics
-        record_mode = self.current_stat >= 3  # Displaying a record (no live aircraft needed)
         record_data = None
 
         if self.current_stat == 0:
@@ -2425,6 +2422,10 @@ class FlightTrackerPlugin(BasePlugin):
                 if y_offset + self._calculate_line_spacing(self.fonts['data_medium']) <= self.display_height:
                     self._draw_text_smart(draw, f"Aircraft: {aircraft_type}", (4, y_offset),
                                         self.fonts['data_medium'], fill=(200, 200, 200), use_outline=False)
+                    y_offset += self._calculate_line_spacing(self.fonts['data_medium'])
+                if y_offset + self._calculate_line_spacing(self.fonts['data_medium']) <= self.display_height:
+                    self._draw_text_smart(draw, f"{alt_disp}  {spd_disp}", (4, y_offset),
+                                        self.fonts['data_medium'], fill=(180, 180, 255), use_outline=False)
                     y_offset += self._calculate_line_spacing(self.fonts['data_medium'])
                 if show_route:
                     right_x = self.display_width - 80
