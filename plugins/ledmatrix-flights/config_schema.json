@@ -9,6 +9,27 @@
       "description": "Enable or disable the flight tracker plugin",
       "default": false
     },
+    "data_source": {
+      "type": "string",
+      "title": "Data Source",
+      "description": "Aircraft data source. 'skyaware' requires a local ADS-B receiver (dump1090/SkyAware). 'flightradar24' uses the FlightRadar24 feed — no hardware required.",
+      "enum": ["skyaware", "flightradar24"],
+      "default": "skyaware"
+    },
+    "fr24_enrichment": {
+      "type": "boolean",
+      "title": "FR24 Route Enrichment",
+      "description": "When using SkyAware, also fetch origin/destination/aircraft type from FlightRadar24 in the background. Replaces the need for a FlightAware API key for route data.",
+      "default": true
+    },
+    "fr24_enrichment_interval": {
+      "type": "integer",
+      "title": "FR24 Enrichment Interval (seconds)",
+      "description": "How often (in seconds) to refresh FR24 enrichment data when using SkyAware as the primary data source.",
+      "minimum": 30,
+      "maximum": 600,
+      "default": 60
+    },
     "display_duration": {
       "type": "number",
       "description": "How long to show the flight tracker display (10-300 seconds)",
@@ -18,7 +39,7 @@
     },
     "update_interval": {
       "type": "integer",
-      "description": "Interval in seconds between aircraft data updates from SkyAware",
+      "description": "Interval in seconds between aircraft data updates",
       "minimum": 1,
       "maximum": 300,
       "default": 5
@@ -30,9 +51,23 @@
     },
     "skyaware_url": {
       "type": "string",
-      "description": "URL to SkyAware aircraft.json endpoint",
+      "description": "URL to SkyAware aircraft.json endpoint (only used when data_source is 'skyaware')",
       "default": "http://192.168.86.30/skyaware/data/aircraft.json",
-      "pattern": "^https?://.*"
+      "pattern": "^(https?://.*)?$"
+    },
+    "flight_records": {
+      "type": "object",
+      "title": "Flight Records",
+      "description": "Track all-time closest and farthest flights ever seen, shown as extra stats rotation slots",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "title": "Enable Flight Records",
+          "description": "Track and display all-time closest and farthest flights (persisted across restarts)",
+          "default": true
+        }
+      },
+      "additionalProperties": false
     },
     "center_latitude": {
       "type": "number",
@@ -171,7 +206,7 @@
     },
     "flight_plan_enabled": {
       "type": "boolean",
-      "description": "Enable flight plan fetching from FlightAware API",
+      "description": "Enable flight plan fetching from FlightAware API. Note: FR24 enrichment (fr24_enrichment) also provides origin/destination data for free without this setting.",
       "default": false
     },
     "max_api_calls_per_hour": {
