@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-02-26",
+  "last_updated": "2026-03-01",
   "plugins": [
     {
       "id": "hello-world",
@@ -150,10 +150,10 @@
       "plugin_path": "plugins/ledmatrix-music",
       "stars": 0,
       "downloads": 0,
-      "last_updated": "2025-11-05",
+      "last_updated": "2026-03-01",
       "verified": true,
       "screenshot": "",
-      "latest_version": "1.0.3"
+      "latest_version": "1.0.4"
     },
     {
       "id": "calendar",
