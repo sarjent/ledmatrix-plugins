@@ -102,8 +102,11 @@ class BaseballScoreboardPlugin(BasePlugin if BasePlugin else object):
             if config_manager is not None:
                 try:
                     global_tz = config_manager.get_timezone()
-                except (AttributeError, TypeError):
-                    self.logger.debug("Global timezone unavailable; falling back to UTC")
+                except Exception as e:
+                    self.logger.exception(
+                        "Failed to read global timezone from config_manager.get_timezone(): %s. Falling back to UTC.",
+                        e,
+                    )
             self.config["timezone"] = global_tz or "UTC"
 
         # Basic configuration

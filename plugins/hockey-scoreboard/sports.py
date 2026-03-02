@@ -854,7 +854,7 @@ class SportsCore(ABC):
             events = data.get("events", [])
 
             self.logger.info(
-                f"Fetched {len(events)} todays games for {self.sport} - {self.league}"
+                f"Fetched {len(events)} games for the last 2 days for {self.sport} - {self.league}"
             )
             return {"events": events}
         except requests.exceptions.RequestException as e:

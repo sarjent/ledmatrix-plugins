@@ -23,6 +23,7 @@
     },
     "calendars": {
       "type": "array",
+      "x-widget": "google-calendar-picker",
       "items": {
         "type": "string"
       },
