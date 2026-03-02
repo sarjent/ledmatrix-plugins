@@ -858,7 +858,10 @@ class SportsCore(ABC):
             formatted_date_yesterday = yesterday.strftime("%Y%m%d")
             # Fetch todays games only
             url = f"https://site.api.espn.com/apis/site/v2/sports/{self.sport}/{self.league}/scoreboard"
-            self.logger.debug(f"Fetching today's games for {self.sport}/{self.league} on date {formatted_date}")
+            self.logger.debug(
+                f"Fetching games for {self.sport}/{self.league} over date range "
+                f"{formatted_date_yesterday}-{formatted_date}"
+            )
             response = self.session.get(
                 url,
                 params={"dates": f"{formatted_date_yesterday}-{formatted_date}", "limit": 1000},

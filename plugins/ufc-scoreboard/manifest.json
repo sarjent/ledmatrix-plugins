@@ -33,6 +33,11 @@
   "config_schema": "config_schema.json",
   "versions": [
     {
+      "version": "1.2.3",
+      "ledmatrix_min": "2.0.0",
+      "released": "2026-03-02"
+    },
+    {
       "version": "1.2.2",
       "ledmatrix_min": "2.0.0",
       "released": "2026-02-24"

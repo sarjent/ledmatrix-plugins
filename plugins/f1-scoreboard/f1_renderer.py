@@ -81,6 +81,8 @@ class F1Renderer:
     def _to_local_dt(self, utc_iso_str: str) -> datetime:
         """Parse a UTC ISO datetime string and convert to configured local timezone."""
         dt = datetime.fromisoformat(utc_iso_str.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=pytz.UTC)
         tz_str = self.config.get("timezone", "UTC")
         try:
             local_tz = pytz.timezone(tz_str)
