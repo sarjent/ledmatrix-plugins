@@ -376,8 +376,16 @@ class CalendarPlugin(BasePlugin):
             return []
 
         try:
-            calendar_list = self.service.calendarList().list().execute()
-            calendars = calendar_list.get("items", [])
+            calendars = []
+            page_token = None
+            while True:
+                response = self.service.calendarList().list(
+                    pageToken=page_token
+                ).execute()
+                calendars.extend(response.get("items", []))
+                page_token = response.get("nextPageToken")
+                if not page_token:
+                    break
             return [
                 {
                     "id": cal.get("id", ""),
@@ -436,11 +444,10 @@ class CalendarPlugin(BasePlugin):
                     
                     self.logger.info(f"Fetched {len(events)} events from calendar: {calendar_id}")
                 
-                except Exception as e:
+                except Exception:
                     self.logger.exception(
-                        "Error fetching events from calendar '%s': %s - verify this calendar ID is correct and accessible under your Google account",
+                        "Error fetching events from calendar '%s' - verify this calendar ID is correct and accessible under your Google account",
                         calendar_id,
-                        e,
                     )
                     continue
             

@@ -115,10 +115,9 @@ class F1ScoreboardPlugin(BasePlugin):
         if config_manager is not None:
             try:
                 tz = config_manager.get_timezone()
-            except Exception as e:
+            except Exception:
                 self.logger.exception(
-                    "Failed to read global timezone from config_manager.get_timezone(): %s. Falling back to UTC.",
-                    e,
+                    "Failed to read global timezone from config_manager.get_timezone(); falling back to UTC."
                 )
         return tz or "UTC"
 
