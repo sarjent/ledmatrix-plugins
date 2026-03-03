@@ -181,11 +181,11 @@ class StockDisplayRenderer:
         is_crypto = data.get('is_crypto', False)
         
         # Draw large stock/crypto logo on the left
+        logo_x = 2  # Small margin from left edge (used for logo_right even if logo is missing)
         logo = self._get_stock_logo(symbol, is_crypto)
         if logo:
             # Position logo on the left side with minimal spacing - matching old stock_manager
             # Ensure positions are integers
-            logo_x = 2  # Small margin from left edge
             logo_y = int((height - logo.height) // 2)
             image.paste(logo, (int(logo_x), int(logo_y)), logo)
         
