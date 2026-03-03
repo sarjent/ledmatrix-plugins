@@ -292,7 +292,16 @@ class StockDisplayRenderer:
         # Draw mini chart on the right only if toggle_chart is enabled
         if self.toggle_chart and 'price_history' in data and len(data['price_history']) >= 2:
             self._draw_mini_chart(draw, data['price_history'], width, height, change_color)
-        
+
+        # When chart is disabled, trim the canvas to actual content width.
+        # The canvas is created at 1.5x display width for text room, but content
+        # typically only fills ~half that — the dead space becomes inter-symbol gap.
+        if not self.toggle_chart:
+            content_right = column_x + (max_text_width // 2) + 8  # 8px right margin
+            content_right = min(content_right, width)
+            if content_right < width:
+                image = image.crop((0, 0, content_right, height))
+
         return image
     
     def create_static_display(self, symbol: str, data: Dict[str, Any]) -> Image.Image:
@@ -399,37 +408,26 @@ class StockDisplayRenderer:
             display = self.create_stock_display(symbol, data)
             stock_displays.append(display)
         
-        # Calculate spacing - match old stock_manager exactly
-        # Old code: stock_gap = width // 6, element_gap = width // 8
-        stock_gap = int(width // 6)  # Reduced gap between stocks
-        element_gap = int(width // 8)  # Reduced gap between elements within a stock
-        
-        # Calculate total width - match old stock_manager calculation
-        # Old code: total_width = sum(width * 2 for _ in symbols) + stock_gap * (len(symbols) - 1) + element_gap * (len(symbols) * 2 - 1)
-        # But each display already has its own width (width * 2 or width * 1.5), so we sum display widths
-        # Ensure all values are integers
-        total_width = sum(int(display.width) for display in stock_displays)
-        total_width += int(stock_gap) * (len(stock_displays) - 1)
-        total_width += int(element_gap) * (len(stock_displays) * 2 - 1)
-        
+        # Gap between individual stock entries. When chart is off each stock canvas
+        # is already trimmed to its content width, so this is the only blank space
+        # separating adjacent symbols. With chart on the 2x canvas already provides
+        # natural separation; 32px keeps the transition crisp in both modes.
+        stock_gap = 32
+
+        # Total width: initial lead-in buffer + all stock canvases + inter-stock gaps
+        total_width = int(width)  # one display-width lead-in before the first stock
+        total_width += sum(int(d.width) for d in stock_displays)
+        total_width += stock_gap * max(len(stock_displays) - 1, 0)
+
         # Create scrolling image - ensure dimensions are integers
         scrolling_image = Image.new('RGB', (int(total_width), int(height)), (0, 0, 0))
-        
-        # Paste all stock displays with spacing - match old stock_manager logic
-        # Old code: current_x = width (starts with display width gap)
-        current_x = int(width)  # Add initial gap before the first stock
-        
+
+        current_x = int(width)  # start after lead-in
         for i, display in enumerate(stock_displays):
-            # Paste this stock image into the full image - ensure position is integer tuple
             scrolling_image.paste(display, (int(current_x), 0))
-            
-            # Move to next position with consistent spacing
-            # Old code: current_x += width * 2 + element_gap
-            current_x += int(display.width) + int(element_gap)
-            
-            # Add extra gap between stocks (except after the last stock)
+            current_x += int(display.width)
             if i < len(stock_displays) - 1:
-                current_x += int(stock_gap)
+                current_x += stock_gap
         
         return scrolling_image
     
