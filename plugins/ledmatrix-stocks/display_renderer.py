@@ -256,14 +256,18 @@ class StockDisplayRenderer:
         # Calculate starting y position to center all text
         start_y = int((height - total_text_height) // 2)
         
-        # Calculate center x position for the column - adjust based on chart toggle
-        # Match old stock_manager exactly
+        # Position text column immediately after the logo's right edge
+        logo_right = int(logo_x + logo.width) if logo else int(logo_x)
+        logo_gap = 4  # px between logo right edge and text start
+        symbol_width_tmp = int(symbol_bbox[2] - symbol_bbox[0])
+        price_width_tmp = int(price_bbox[2] - price_bbox[0])
+        change_width_tmp = int(change_bbox[2] - change_bbox[0]) if change_text else 0
+        max_text_width = max(symbol_width_tmp, price_width_tmp, change_width_tmp, 1)
+        column_x = logo_right + logo_gap + (max_text_width // 2)
         if self.toggle_chart:
-            # When chart is enabled, center text more to the left
-            column_x = int(width / 2.85)
-        else:
-            # When chart is disabled, position text with more space from logo
-            column_x = int(width / 2.2)
+            # Clamp so text does not overlap the mini chart area
+            chart_start = width // 2
+            column_x = min(column_x, chart_start - (max_text_width // 2) - logo_gap)
         
         # Draw symbol
         symbol_width = int(symbol_bbox[2] - symbol_bbox[0])
