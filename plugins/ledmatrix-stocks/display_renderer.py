@@ -25,6 +25,7 @@ class StockDisplayRenderer:
         
         # Display configuration
         self.toggle_chart = config.get('display', {}).get('toggle_chart', True)
+        self.stock_gap = int(config.get('display', {}).get('stock_gap', 32))
         
         # Load colors from customization structure (organized by element: symbol, price, price_delta)
         # Support both new format (customization.stocks.*) and old format (top-level) for backwards compatibility
@@ -408,11 +409,7 @@ class StockDisplayRenderer:
             display = self.create_stock_display(symbol, data)
             stock_displays.append(display)
         
-        # Gap between individual stock entries. When chart is off each stock canvas
-        # is already trimmed to its content width, so this is the only blank space
-        # separating adjacent symbols. With chart on the 2x canvas already provides
-        # natural separation; 32px keeps the transition crisp in both modes.
-        stock_gap = 32
+        stock_gap = self.stock_gap
 
         # Total width: initial lead-in buffer + all stock canvases + inter-stock gaps
         total_width = int(width)  # one display-width lead-in before the first stock
