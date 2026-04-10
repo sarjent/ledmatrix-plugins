@@ -21,6 +21,7 @@ from masters_renderer import MastersRenderer
 from masters_renderer_enhanced import MastersRendererEnhanced
 from logo_loader import MastersLogoLoader
 from masters_helpers import (
+    _masters_thursday,
     calculate_tournament_countdown,
     filter_favorite_players,
     format_score_to_par,
@@ -270,10 +271,20 @@ class MastersTournamentPlugin(BasePlugin):
         enabled = []
         for mode in phase_modes:
             config_key = config_key_map.get(mode)
-            if config_key:
-                mode_config = display_modes_config.get(config_key, {})
+            if not config_key:
+                continue
+            mode_config = display_modes_config.get(config_key)
+            if mode_config is None:
+                # Not configured → enabled by default
+                enabled.append(mode)
+            elif isinstance(mode_config, bool):
+                # Web UI may save "fun_facts": false instead of nested {"enabled": false}
+                if mode_config:
+                    enabled.append(mode)
+            elif isinstance(mode_config, dict):
                 if mode_config.get("enabled", True):
                     enabled.append(mode)
+            # else: unexpected type → treat as disabled
 
         self.logger.debug(f"Phase '{phase}' -> {len(enabled)} modes: {enabled}")
         return enabled
@@ -548,10 +559,8 @@ class MastersTournamentPlugin(BasePlugin):
             target = meta["start_date"]
         else:
             # Hard fallback — should be unreachable, but keep the screen alive.
-            # Use the same second-Thursday-of-April calculation the data source
-            # uses rather than a hardcoded April 10 which is wrong most years.
             now = datetime.now(timezone.utc)
-            target = MastersDataSource._second_thursday_of_april(now.year)
+            target = _masters_thursday(now.year)
         countdown = calculate_tournament_countdown(target)
         return self._show_image(
             self.renderer.render_countdown(

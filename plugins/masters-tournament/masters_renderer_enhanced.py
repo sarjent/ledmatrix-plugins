@@ -267,111 +267,83 @@ class MastersRendererEnhanced(MastersRenderer):
 
     def _render_hole_card_with_image(self, img, draw, hole_number: int,
                                      hole_info: Dict, cw: int, ch: int) -> Image.Image:
-        """Large-canvas layout: single text column on the left + hole image on the right.
+        """Large-canvas two-column layout.
 
-        Text column contents (stacked top to bottom):
-            [Hole #, Hole Name (wrapped), Par, Yardage]
-        Zone badge is drawn as a small chip in the bottom-right over the image.
+        Left column (info panel, stacked top-to-bottom):
+            #<N>     — font_header (larger than detail text)
+            Par <N>  — font_detail
+            <yard>y  — font_detail
+            [zone]   — font_detail, bottom of panel (if space)
+
+        Right column:
+            Hole map image — centred vertically in available space
+            Hole name      — centred at the very bottom of the column
         """
-        # Left panel width: wide enough to fit "Golden Bell" and par/yardage text.
-        # Grows with card width so 256x64 cards get more text room than 128x48.
-        left_w = max(38, min(56, cw // 3))
+        # Left panel width: narrower than before so the image gets more room.
+        left_w = max(32, min(46, cw // 4))
 
-        # Left panel background strip
+        # Left panel background strip + separator
         draw.rectangle([(0, 0), (left_w - 1, ch - 1)], fill=COLORS["masters_dark"])
         draw.line([(left_w - 1, 0), (left_w - 1, ch)], fill=COLORS["masters_yellow"])
 
-        line_h = self._text_height(draw, "A", self.font_detail) + 1
+        line_h = self._text_height(draw, "A", self.font_detail) + 2
         max_text_w = left_w - 4
 
-        # Top: hole number
+        # ── Hole number (top, larger font) ──────────────────────────────
         hole_text = f"#{hole_number}"
         hole_h = self._text_height(draw, hole_text, self.font_header)
         hw = self._text_width(draw, hole_text, self.font_header)
-        self._text_shadow(draw, ((left_w - hw) // 2, 2), hole_text,
-                          self.font_header, COLORS["white"])
-        top_bound = 2 + hole_h + 2
+        self._text_shadow(draw, ((left_w - hw) // 2, 3),
+                          hole_text, self.font_header, COLORS["white"])
 
-        # Bottom: par + yardage pinned to actual canvas bottom
+        # ── Par + yardage directly below hole number ─────────────────────
+        y_info = 3 + hole_h + 3
         par_text = f"Par {hole_info['par']}"
         yard_text = f"{hole_info['yardage']}y"
-        par_block_h = line_h * 2
-        par_y = ch - par_block_h - 2
         pw = self._text_width(draw, par_text, self.font_detail)
-        draw.text(((left_w - pw) // 2, par_y), par_text,
-                  fill=COLORS["white"], font=self.font_detail)
+        draw.text(((left_w - pw) // 2, y_info),
+                  par_text, fill=COLORS["white"], font=self.font_detail)
+        y_info += line_h
         yw = self._text_width(draw, yard_text, self.font_detail)
-        draw.text(((left_w - yw) // 2, par_y + line_h), yard_text,
-                  fill=COLORS["light_gray"], font=self.font_detail)
-        bottom_bound = par_y - 2
+        draw.text(((left_w - yw) // 2, y_info),
+                  yard_text, fill=COLORS["masters_yellow"], font=self.font_detail)
+        y_info += line_h
 
-        # Middle: hole name — fit in whatever space is left between hole# and par
-        name_text = hole_info["name"]
-        name_slot = bottom_bound - top_bound
-        max_lines = max(1, name_slot // line_h)
-
-        name_lines: List[str] = []
-        nw = self._text_width(draw, name_text, self.font_detail)
-        if nw <= max_text_w:
-            name_lines = [name_text]
-        else:
-            words = name_text.split()
-            current = ""
-            for word in words:
-                test = f"{current} {word}".strip() if current else word
-                if self._text_width(draw, test, self.font_detail) <= max_text_w:
-                    current = test
-                else:
-                    if current:
-                        name_lines.append(current)
-                    current = word
-            if current:
-                name_lines.append(current)
-
-        # Clamp to available lines; ellipsize the last surviving line if clipped.
-        if len(name_lines) > max_lines:
-            name_lines = name_lines[:max_lines]
-            last = name_lines[-1]
-            while last and self._text_width(draw, last + "..", self.font_detail) > max_text_w:
-                last = last[:-1]
-            name_lines[-1] = (last + "..") if last else ".."
-        for idx, line in enumerate(name_lines):
-            while line and self._text_width(draw, line, self.font_detail) > max_text_w:
-                line = line[:-1]
-            name_lines[idx] = line
-
-        block_h = len(name_lines) * line_h
-        name_y = top_bound + max(0, (name_slot - block_h) // 2)
-        for i, line in enumerate(name_lines):
-            lw = self._text_width(draw, line, self.font_detail)
-            draw.text(((left_w - lw) // 2, name_y + i * line_h), line,
-                      fill=COLORS["masters_yellow"], font=self.font_detail)
-
-        # Right side: hole layout image
-        img_x = left_w + 2
-        img_w = cw - img_x - 2
-        img_h = ch - 4
-        hole_img = self.logo_loader.get_hole_image(
-            hole_number,
-            max_width=img_w,
-            max_height=img_h,
-        )
-        if hole_img:
-            hx = img_x + (img_w - hole_img.width) // 2
-            hy = (ch - hole_img.height) // 2
-            img.paste(hole_img, (hx, hy), hole_img if hole_img.mode == "RGBA" else None)
-
-        # Zone badge at bottom-right corner over the hole image
+        # ── Zone badge at bottom of left panel (if room) ─────────────────
         zone = hole_info.get("zone")
         if zone and self.tier != "tiny":
-            badge = zone.upper()
-            bw = self._text_width(draw, badge, self.font_detail) + 4
-            bx = cw - bw - 1
-            by = ch - 9
-            draw.rectangle([(bx, by), (cw - 1, ch - 1)],
-                           fill=COLORS["masters_dark"])
-            draw.text((bx + 2, by + 1), badge,
-                      fill=COLORS["masters_yellow"], font=self.font_detail)
+            badge = zone[:3].upper()  # e.g. "AME", "FEA"
+            bw = self._text_width(draw, badge, self.font_detail)
+            by = ch - line_h - 1
+            if by > y_info + 2:
+                draw.text(((left_w - bw) // 2, by),
+                          badge, fill=COLORS["azalea_pink"], font=self.font_detail)
+
+        # ── Right column — image + name ──────────────────────────────────
+        rx = left_w + 2
+        right_w = cw - rx - 2
+
+        # Reserve the bottom of the right column for the hole name
+        name_h = line_h + 2
+        img_max_h = max(1, ch - name_h - 4)
+
+        hole_img = self.logo_loader.get_hole_image(
+            hole_number,
+            max_width=max(1, right_w),
+            max_height=img_max_h,
+        )
+        if hole_img:
+            hx = rx + (right_w - hole_img.width) // 2
+            hy = (img_max_h - hole_img.height) // 2 + 2
+            img.paste(hole_img, (hx, hy), hole_img if hole_img.mode == "RGBA" else None)
+
+        # Hole name centred at the very bottom of the right column
+        name_text = hole_info["name"]
+        while name_text and self._text_width(draw, name_text, self.font_detail) > right_w:
+            name_text = name_text[:-1]
+        nw = self._text_width(draw, name_text, self.font_detail)
+        draw.text((rx + (right_w - nw) // 2, ch - line_h - 1),
+                  name_text, fill=COLORS["masters_yellow"], font=self.font_detail)
 
         return img
 

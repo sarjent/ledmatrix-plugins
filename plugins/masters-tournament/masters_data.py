@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from masters_helpers import ESPN_HEADSHOT_URL, ESPN_PLAYER_IDS, get_espn_headshot_url, get_player_country
+from masters_helpers import ESPN_HEADSHOT_URL, ESPN_PLAYER_IDS, _masters_thursday, get_espn_headshot_url, get_player_country
 
 logger = logging.getLogger(__name__)
 
@@ -267,15 +267,15 @@ class MastersDataSource:
         return f"{display_hour}:{minute:02d} {suffix}"
 
     def _computed_fallback_meta(self) -> Dict:
-        """Compute a best-guess Masters window: second Thursday of April.
+        """Compute a best-guess Masters window using the April 6-12 Thursday rule.
 
         Used only when ESPN doesn't currently return the Masters (off-season).
         """
         now = datetime.now(timezone.utc)
         year = now.year
-        start = self._second_thursday_of_april(year)
+        start = _masters_thursday(year)
         if now > start + timedelta(days=4):
-            start = self._second_thursday_of_april(year + 1)
+            start = _masters_thursday(year + 1)
         # Cover all four calendar days (Thu–Sun) through end-of-day, matching
         # the normalization applied to ESPN's parsed endDate.
         end = start + timedelta(days=3, hours=23, minutes=59, seconds=59)
@@ -290,12 +290,8 @@ class MastersDataSource:
 
     @staticmethod
     def _second_thursday_of_april(year: int) -> datetime:
-        """Second Thursday of April at 12:00 UTC (≈ 8am ET tee-off)."""
-        d = datetime(year, 4, 1, 12, 0, 0, tzinfo=timezone.utc)
-        # weekday(): Mon=0 … Thu=3
-        days_to_first_thursday = (3 - d.weekday()) % 7
-        first_thursday = d + timedelta(days=days_to_first_thursday)
-        return first_thursday + timedelta(days=7)
+        """Alias kept for backwards compatibility — delegates to _masters_thursday."""
+        return _masters_thursday(year)
 
     # ── Schedule / tee times ─────────────────────────────────────
 

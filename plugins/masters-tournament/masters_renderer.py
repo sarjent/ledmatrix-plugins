@@ -886,55 +886,106 @@ class MastersRenderer:
     def render_hole_card(self, hole_number: int,
                          card_width: Optional[int] = None,
                          card_height: Optional[int] = None) -> Optional[Image.Image]:
+        """Two-column hole card.
+
+        Left column — hole information stacked top to bottom:
+            #<N>   (font_header — larger than the detail text)
+            Par <N>
+            <yard>y
+
+        Right column — hole map image with hole name centred below it.
+
+        Tiny displays (≤32 wide) fall back to a single-column layout because
+        there is not enough horizontal space for two readable columns.
+        """
         cw = card_width if card_width is not None else self.width
         ch = card_height if card_height is not None else self.height
         hole_info = get_hole_info(hole_number)
 
-        img = self._draw_gradient_bg((15, 80, 30), COLORS["augusta_green"],
+        img = self._draw_gradient_bg((10, 70, 25), COLORS["augusta_green"],
                                      width=cw, height=ch)
         draw = ImageDraw.Draw(img)
 
-        # Header
-        header_h = self.header_height
-        draw.rectangle([(0, 0), (cw - 1, header_h - 1)], fill=COLORS["masters_green"])
-        draw.line([(0, header_h - 1), (cw, header_h - 1)], fill=COLORS["masters_yellow"])
-
-        hole_text = f"HOLE {hole_number}"
-        self._text_shadow(draw, (3, 1), hole_text, self.font_header, COLORS["white"])
-
-        if self.tier != "tiny":
-            name_text = hole_info["name"]
-            name_w = self._text_width(draw, name_text, self.font_detail)
-            draw.text((cw - name_w - 3, 2), name_text,
+        if self.tier == "tiny":
+            # Single-column fallback for 32-wide displays
+            draw.rectangle([(0, 0), (cw - 1, self.header_height - 1)],
+                           fill=COLORS["masters_green"])
+            draw.line([(0, self.header_height - 1), (cw, self.header_height - 1)],
+                      fill=COLORS["masters_yellow"])
+            self._text_shadow(draw, (2, 1), f"#{hole_number}",
+                              self.font_header, COLORS["white"])
+            y = self.header_height + 2
+            draw.text((2, y), f"Par {hole_info['par']}",
+                      fill=COLORS["white"], font=self.font_detail)
+            y += self._text_height(draw, "A", self.font_detail) + 1
+            draw.text((2, y), f"{hole_info['yardage']}y",
                       fill=COLORS["masters_yellow"], font=self.font_detail)
+            return img
 
-        # Hole layout image (clamp to min 1px for tiny displays)
+        # ── Two-column layout (small / large tiers) ──────────────────────
+        # Left column width: wide enough for the hole number + par/yards text.
+        left_w = max(22, min(30, cw // 3))
+
+        # Vertical separator
+        draw.line([(left_w, 2), (left_w, ch - 2)], fill=COLORS["masters_yellow"])
+
+        line_h = self._text_height(draw, "A", self.font_detail) + 2
+
+        # ── Left column ─────────────────────────────────────────────────
+        # Hole number — use font_header so it renders larger than par/yards.
+        num_text = f"#{hole_number}"
+        num_h = self._text_height(draw, num_text, self.font_header)
+        num_w = self._text_width(draw, num_text, self.font_header)
+        self._text_shadow(draw, ((left_w - num_w) // 2, 3),
+                          num_text, self.font_header, COLORS["white"])
+
+        # Par and yardage below the number
+        y_info = 3 + num_h + 3
+        par_text = f"Par {hole_info['par']}"
+        yard_text = f"{hole_info['yardage']}y"
+        for label, color in ((par_text, COLORS["white"]),
+                             (yard_text, COLORS["masters_yellow"])):
+            lw = self._text_width(draw, label, self.font_detail)
+            draw.text(((left_w - lw) // 2, y_info), label,
+                      fill=color, font=self.font_detail)
+            y_info += line_h
+
+        # Zone badge at the bottom of the left column (if room)
+        zone = hole_info.get("zone")
+        if zone:
+            badge = zone[:3].upper()
+            bw = self._text_width(draw, badge, self.font_detail)
+            by = ch - line_h - 1
+            if by > y_info:
+                draw.text(((left_w - bw) // 2, by), badge,
+                          fill=COLORS["azalea_pink"], font=self.font_detail)
+
+        # ── Right column — hole map image + name below ───────────────────
+        rx = left_w + 3
+        right_w = cw - rx - 2
+
+        # Reserve bottom pixels for the hole name label
+        name_h = line_h + 1
+        img_max_h = max(1, ch - name_h - 4)
+
         hole_img = self.logo_loader.get_hole_image(
             hole_number,
-            max_width=max(1, cw - 8),
-            max_height=max(1, ch - header_h - 14),
+            max_width=max(1, right_w),
+            max_height=img_max_h,
         )
         if hole_img:
-            hx = (cw - hole_img.width) // 2
-            hy = header_h + 2
+            hx = rx + (right_w - hole_img.width) // 2
+            hy = (img_max_h - hole_img.height) // 2 + 2
             img.paste(hole_img, (hx, hy), hole_img if hole_img.mode == "RGBA" else None)
 
-        # Footer
-        footer_y = ch - 9
-        draw.rectangle([(0, footer_y), (cw - 1, ch - 1)], fill=(0, 0, 0))
-        info_text = f"Par {hole_info['par']}  {hole_info['yardage']}y"
-        self._text_shadow(draw, (3, footer_y + 1), info_text,
-                          self.font_detail, COLORS["white"])
-
-        zone = hole_info.get("zone")
-        if zone and self.tier != "tiny":
-            badge_text = zone.upper()
-            bw = self._text_width(draw, badge_text, self.font_detail) + 4
-            draw.rectangle([(cw - bw - 2, footer_y),
-                            (cw - 2, ch - 1)],
-                           fill=COLORS["masters_dark"])
-            draw.text((cw - bw, footer_y + 1), badge_text,
-                      fill=COLORS["masters_yellow"], font=self.font_detail)
+        # Hole name centred at the bottom of the right column
+        name_text = hole_info["name"]
+        # Truncate to fit available width
+        while name_text and self._text_width(draw, name_text, self.font_detail) > right_w:
+            name_text = name_text[:-1]
+        nw = self._text_width(draw, name_text, self.font_detail)
+        draw.text((rx + (right_w - nw) // 2, ch - line_h - 1),
+                  name_text, fill=COLORS["masters_yellow"], font=self.font_detail)
 
         return img
 
