@@ -533,7 +533,11 @@ class MastersTournamentPlugin(BasePlugin):
             target = meta["start_date"]
         else:
             # Hard fallback — should be unreachable, but keep the screen alive.
-            target = _masters_thursday(datetime.now(timezone.utc).year)
+            now = datetime.now(timezone.utc)
+            year = now.year
+            target = _masters_thursday(year)
+            if target <= now:
+                target = _masters_thursday(year + 1)
         countdown = calculate_tournament_countdown(target)
         return self._show_image(
             self.renderer.render_countdown(
