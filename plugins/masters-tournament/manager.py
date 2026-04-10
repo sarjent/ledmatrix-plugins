@@ -9,7 +9,7 @@ fun facts, past champions, and Augusta National branding year-round.
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from PIL import Image
@@ -21,6 +21,7 @@ from masters_renderer import MastersRenderer
 from masters_renderer_enhanced import MastersRendererEnhanced
 from logo_loader import MastersLogoLoader
 from masters_helpers import (
+    _masters_thursday,
     calculate_tournament_countdown,
     filter_favorite_players,
     get_detailed_phase,
@@ -451,7 +452,12 @@ class MastersTournamentPlugin(BasePlugin):
             self._last_hole_advance["course_tour"] = now
         elif last == 0:
             self._last_hole_advance["course_tour"] = now
-        return self._show_image(self.renderer.render_hole_card(self._current_hole))
+        show_divider = self.config.get("display_modes", {}).get(
+            "course_tour", {}
+        ).get("show_divider", True)
+        return self._show_image(
+            self.renderer.render_hole_card(self._current_hole, show_divider=show_divider)
+        )
 
     def _display_amen_corner(self, force_clear: bool) -> bool:
         return self._show_image(self.renderer.render_amen_corner())
@@ -527,8 +533,7 @@ class MastersTournamentPlugin(BasePlugin):
             target = meta["start_date"]
         else:
             # Hard fallback — should be unreachable, but keep the screen alive.
-            now = datetime.utcnow()
-            target = datetime(now.year, 4, 10, 12, 0, 0)
+            target = _masters_thursday(datetime.now(timezone.utc).year)
         countdown = calculate_tournament_countdown(target)
         return self._show_image(
             self.renderer.render_countdown(

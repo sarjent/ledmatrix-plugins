@@ -143,6 +143,11 @@
               "maximum": 60,
               "description": "Time to show each hole (seconds)"
             },
+            "show_divider": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show the vertical divider line between the hole info and map columns. Set to false for a cleaner single-cell look."
+            },
             "featured_holes": {
               "type": "array",
               "items": {
