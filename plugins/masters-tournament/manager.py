@@ -98,8 +98,12 @@ class MastersTournamentPlugin(BasePlugin):
         self._tournament_phase = get_tournament_phase(start_date=meta_start, end_date=meta_end)
         self._detailed_phase = get_detailed_phase(start_date=meta_start, end_date=meta_end)
 
-        # Build enabled modes (phase-aware)
+        # Build enabled modes (phase-aware).
+        # _enabled_modes_set is a fast O(1) lookup used in display() to skip
+        # modes that have been disabled via config after the framework loaded
+        # its static rotation list from self.modes at startup.
         self.modes = self._build_enabled_modes()
+        self._enabled_modes_set: set = set(self.modes)
 
         # Current mode tracking
         self.current_mode_index = 0
@@ -318,6 +322,7 @@ class MastersTournamentPlugin(BasePlugin):
                 start_date=meta_start, end_date=meta_end
             )
             self.modes = new_modes
+            self._enabled_modes_set = set(new_modes)
             self.logger.info(
                 f"Phase changed: {old_phase} -> {self._detailed_phase}, "
                 f"now showing {len(self.modes)} modes"
@@ -385,6 +390,13 @@ class MastersTournamentPlugin(BasePlugin):
             display_mode = self.modes[0] if self.modes else None
 
         if display_mode is None:
+            return False
+
+        # Guard: the framework reads self.modes once at startup and never
+        # refreshes its own rotation list when config changes.  Check at
+        # render time so a mode that was disabled after startup is silently
+        # skipped (returning False signals "nothing to show, move on").
+        if display_mode not in self._enabled_modes_set:
             return False
 
         self._current_display_mode = display_mode
@@ -651,6 +663,7 @@ class MastersTournamentPlugin(BasePlugin):
         self._last_page_advance.clear()
         self._last_fact_change = 0.0
         self.modes = self._build_enabled_modes()
+        self._enabled_modes_set = set(self.modes)
         self._last_update = 0
 
     def cleanup(self):
