@@ -615,6 +615,7 @@ class MastersDataSource:
                     "current_hole": status.get("hole"),
                     "status": status.get("displayValue", ""),
                     "tee_time": status.get("teeTime"),
+                    "is_active": self._is_active_competitor(entry),
                 })
 
         except Exception as e:
@@ -622,11 +623,23 @@ class MastersDataSource:
 
         return players
 
+    # ESPN values that indicate a player is no longer competing (missed cut,
+    # withdrawal, disqualification). Returning 0 for these would misrepresent
+    # them as even par; callers should check `is_active` on the player dict.
+    _INACTIVE_SCORE_VALUES = frozenset({"MC", "WD", "DQ", "CUT", "MDF", "--"})
+
     def _calculate_score_to_par(self, entry: Dict) -> int:
-        """Calculate player's score relative to par."""
+        """Calculate player's score relative to par.
+
+        Returns 0 for inactive players (MC/WD/DQ/etc.) — callers should check
+        the companion ``is_active`` field on the player dict to distinguish
+        "even par" from "not competing".
+        """
         try:
             display_value = (entry.get("score") or {}).get("displayValue", "E")
             if not display_value or display_value in ("-", "E"):
+                return 0
+            if display_value.upper() in self._INACTIVE_SCORE_VALUES:
                 return 0
             if display_value.startswith("+"):
                 return int(display_value[1:])
@@ -635,6 +648,11 @@ class MastersDataSource:
             return 0
         except Exception:
             return 0
+
+    def _is_active_competitor(self, entry: Dict) -> bool:
+        """Return False for players who have missed the cut, withdrawn, or been DQ'd."""
+        display_value = ((entry.get("score") or {}).get("displayValue") or "").upper().strip()
+        return display_value not in self._INACTIVE_SCORE_VALUES
 
     def _get_today_score(self, score_data: Dict) -> Optional[int]:
         """Get today's round score relative to par (None when not yet playing)."""

@@ -9,7 +9,7 @@ fun facts, past champions, and Augusta National branding year-round.
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from PIL import Image
@@ -23,6 +23,7 @@ from logo_loader import MastersLogoLoader
 from masters_helpers import (
     calculate_tournament_countdown,
     filter_favorite_players,
+    format_score_to_par,
     get_detailed_phase,
     get_tournament_phase,
     sort_leaderboard,
@@ -104,7 +105,8 @@ class MastersTournamentPlugin(BasePlugin):
         self._current_display_mode: Optional[str] = None
 
         # Course tour state (separate cursors so modes don't interfere)
-        self._current_hole = 1
+        self._current_hole = 1          # used by masters_course_tour
+        self._hole_by_hole_index = 1    # used by masters_hole_by_hole (independent)
         self._featured_hole_index = 0
 
         # Pagination state for each mode (auto-advances each display cycle)
@@ -125,6 +127,8 @@ class MastersTournamentPlugin(BasePlugin):
         self._hole_switch_interval = config.get("hole_display_duration", 15)
         self._last_fact_advance = 0
         self._fact_advance_interval = 2  # seconds between scroll steps
+        self._last_fact_change = 0.0    # when the current fact started showing
+        self._fact_dwell = config.get("fun_fact_duration", 20)  # seconds per fact
         self._last_page_advance = {}  # per-mode page timers
         self._page_interval = config.get("page_display_duration", 15)
 
@@ -461,8 +465,20 @@ class MastersTournamentPlugin(BasePlugin):
         return self._show_image(self.renderer.render_past_champions(page=page))
 
     def _display_hole_by_hole(self, force_clear: bool) -> bool:
-        """Display hole-by-hole course tour (same as course_tour)."""
-        return self._display_course_tour(force_clear)
+        """Display hole-by-hole course tour with its own independent hole cursor.
+
+        Uses a separate index and timer from _display_course_tour so that when
+        both modes appear in the same phase rotation they don't share state and
+        double-advance the hole counter.
+        """
+        now = time.time()
+        last = self._last_hole_advance.get("hole_by_hole", 0)
+        if last > 0 and now - last >= self._hole_switch_interval:
+            self._hole_by_hole_index = (self._hole_by_hole_index % 18) + 1
+            self._last_hole_advance["hole_by_hole"] = now
+        elif last == 0:
+            self._last_hole_advance["hole_by_hole"] = now
+        return self._show_image(self.renderer.render_hole_card(self._hole_by_hole_index))
 
     def _display_featured_holes(self, force_clear: bool) -> bool:
         featured = [12, 13, 15, 16]
@@ -485,13 +501,13 @@ class MastersTournamentPlugin(BasePlugin):
     def _display_live_action(self, force_clear: bool) -> bool:
         """Show live alert if enhanced renderer available, else leaderboard."""
         if hasattr(self.renderer, "render_live_alert") and self._leaderboard_data:
-            # Show the leader's current status as a live alert
             leader = self._leaderboard_data[0]
+            score_label = format_score_to_par(leader.get("score", 0))
             return self._show_image(
                 self.renderer.render_live_alert(
                     leader.get("player", ""),
                     leader.get("current_hole", 18) or 18,
-                    "Leader",
+                    score_label,
                 )
             )
         return self._display_leaderboard(force_clear)
@@ -505,13 +521,22 @@ class MastersTournamentPlugin(BasePlugin):
             self.renderer.render_fun_fact(self._fact_index, scroll_offset=self._fact_scroll)
         )
         now = time.time()
+        # Initialise dwell timer on first call.
+        if self._last_fact_change == 0.0:
+            self._last_fact_change = now
+        # Advance scroll offset every _fact_advance_interval seconds so long
+        # facts scroll through all their lines. The renderer wraps scroll_offset
+        # via modulo so it cycles cleanly without any reset needed here.
         if now - self._last_fact_advance >= self._fact_advance_interval:
             self._fact_scroll += 1
             self._last_fact_advance = now
-        # Move to next fact after scrolling through
-        if self._fact_scroll > 5:
+        # Move to the next fact only after the full dwell period has elapsed,
+        # giving enough time for all lines to scroll into view regardless of
+        # how many wrapped lines the fact produces.
+        if now - self._last_fact_change >= self._fact_dwell:
             self._fact_index += 1
             self._fact_scroll = 0
+            self._last_fact_change = now
         return result
 
     def _display_countdown(self, force_clear: bool) -> bool:
@@ -523,8 +548,10 @@ class MastersTournamentPlugin(BasePlugin):
             target = meta["start_date"]
         else:
             # Hard fallback — should be unreachable, but keep the screen alive.
-            now = datetime.utcnow()
-            target = datetime(now.year, 4, 10, 12, 0, 0)
+            # Use the same second-Thursday-of-April calculation the data source
+            # uses rather than a hardcoded April 10 which is wrong most years.
+            now = datetime.now(timezone.utc)
+            target = MastersDataSource._second_thursday_of_april(now.year)
         countdown = calculate_tournament_countdown(target)
         return self._show_image(
             self.renderer.render_countdown(
@@ -610,8 +637,10 @@ class MastersTournamentPlugin(BasePlugin):
         self._page_interval = new_config.get("page_display_duration", 15)
         self._player_card_interval = new_config.get("player_card_duration", 8)
         self._scroll_card_width = new_config.get("scroll_card_width", 128)
+        self._fact_dwell = new_config.get("fun_fact_duration", 20)
         self._last_hole_advance.clear()
         self._last_page_advance.clear()
+        self._last_fact_change = 0.0
         self.modes = self._build_enabled_modes()
         self._last_update = 0
 
