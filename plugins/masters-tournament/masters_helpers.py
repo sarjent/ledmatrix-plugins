@@ -354,13 +354,13 @@ def _masters_thursday(year: int) -> datetime:
         2025 (Apr 1 = Tue) → Apr 10
         2026 (Apr 1 = Wed) → Apr  9
         2027 (Apr 1 = Thu) → Apr  8
-        2028 (Apr 1 = Sat) → Apr 12
+        2028 (Apr 1 = Sat) → Apr  6
 
     Returns a timezone-aware datetime at 12:00 UTC (≈ 8 am ET tee-off).
     """
-    for day in range(6, 13):  # April 6 .. April 12
+    for day in range(6, 13):  # April 6 .. April 12 inclusive
         d = datetime(year, 4, day, 12, 0, 0, tzinfo=timezone.utc)
-        if d.weekday() == 3:  # Thursday
+        if d.weekday() == 3:  # Thursday = 3
             return d
     # Unreachable — there is always exactly one Thursday in any 7-day span.
     raise RuntimeError(f"No Thursday found between April 6-12 for year {year}")
@@ -460,13 +460,18 @@ def get_detailed_phase(
 
     # Fallback: compute the correct tournament window dynamically using the
     # April 6-12 Thursday rule so this stays accurate in future years.
+    # Use calendar-day comparisons so that early-morning hours on tournament
+    # days (e.g. 6am Thursday) are not mistakenly classified as "practice".
     hour = date.hour
     thu = _masters_thursday(date.year)
     thu_e = _to_eastern(thu)
-    start_e = thu_e                   # Thursday tee-off
-    end_e = thu_e + timedelta(days=3, hours=23, minutes=59, seconds=59)  # Sunday EOD
+    thu_date = thu_e.date()
+    sun_date = thu_date + timedelta(days=3)     # Sunday = last day
+    mon_date = thu_date - timedelta(days=3)     # Monday = first practice day
+    date_date = date.date()
 
-    if start_e <= date <= end_e:
+    # Tournament days: Thursday through Sunday (calendar day)
+    if thu_date <= date_date <= sun_date:
         if hour < 6:
             return "tournament-overnight"
         if hour < 8:
@@ -475,16 +480,16 @@ def get_detailed_phase(
             return "tournament-live"
         return "tournament-evening"
 
-    if date > end_e and (date - end_e) <= timedelta(days=1):
+    # Day after the tournament ends (Monday)
+    if date_date == sun_date + timedelta(days=1):
         return "post-tournament"
 
-    # Practice rounds: Mon-Wed before the Thursday
-    practice_start = thu_e - timedelta(days=3)
-    if practice_start <= date < start_e:
+    # Practice rounds: Mon-Wed of Masters week
+    if mon_date <= date_date < thu_date:
         return "practice"
 
     # Pre-tournament: up to 2 weeks before (build anticipation)
-    if timedelta(0) < start_e - date <= timedelta(days=14):
+    if timedelta(0) < thu_e - date <= timedelta(days=14):
         return "pre-tournament"
 
     # Late March counts as pre-tournament too
