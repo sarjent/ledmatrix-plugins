@@ -166,7 +166,7 @@ class MastersRendererEnhanced(MastersRenderer):
             y_text += 10
 
         # Score - big
-        score = player.get("score", 0)
+        score = player.get("score")
         score_text = format_score_to_par(score)
         self._text_shadow(draw, (tx, y_text), score_text,
                           self.font_score, self._score_color(score))

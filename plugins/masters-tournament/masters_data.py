@@ -624,26 +624,29 @@ class MastersDataSource:
     # them as even par; callers should check `is_active` on the player dict.
     _INACTIVE_SCORE_VALUES = frozenset({"MC", "WD", "DQ", "CUT", "MDF", "--"})
 
-    def _calculate_score_to_par(self, entry: Dict) -> int:
+    def _calculate_score_to_par(self, entry: Dict) -> Optional[int]:
         """Calculate player's score relative to par.
 
-        Returns 0 for inactive players (MC/WD/DQ/etc.) — callers should check
-        the companion ``is_active`` field on the player dict to distinguish
-        "even par" from "not competing".
+        Returns None for inactive players (MC/WD/DQ/CUT/MDF/--) and for
+        unknown/unparseable values so downstream renderers can show "--"
+        rather than treating them as even par.
+        Returns 0 for "E" (even par) and an int for numeric scores.
         """
         try:
-            display_value = (entry.get("score") or {}).get("displayValue", "E")
-            if not display_value or display_value in ("-", "E"):
+            display_value = (entry.get("score") or {}).get("displayValue", "")
+            if not display_value or display_value == "-":
+                return None
+            if display_value == "E":
                 return 0
             if display_value.upper() in self._INACTIVE_SCORE_VALUES:
-                return 0
+                return None
             if display_value.startswith("+"):
                 return int(display_value[1:])
             if display_value.startswith("-") and len(display_value) > 1:
                 return int(display_value)
-            return 0
+            return None
         except Exception:
-            return 0
+            return None
 
     def _is_active_competitor(self, entry: Dict) -> bool:
         """Return False for players who have missed the cut, withdrawn, or been DQ'd."""

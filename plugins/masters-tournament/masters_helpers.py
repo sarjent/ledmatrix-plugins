@@ -323,8 +323,13 @@ def format_player_name(name: str, max_length: int = 15) -> str:
     return name[:max_length - 2] + ".."
 
 
-def format_score_to_par(score: int) -> str:
-    """Format score relative to par for display."""
+def format_score_to_par(score: Optional[int]) -> str:
+    """Format score relative to par for display.
+
+    Returns "--" for None (inactive/unknown players such as MC, WD, DQ).
+    """
+    if score is None:
+        return "--"
     if score == 0:
         return "E"
     elif score < 0:
@@ -488,8 +493,9 @@ def get_detailed_phase(
     if mon_date <= date_date < thu_date:
         return "practice"
 
-    # Pre-tournament: up to 2 weeks before (build anticipation)
-    if timedelta(0) < thu_e - date <= timedelta(days=14):
+    # Pre-tournament: up to 2 weeks before (build anticipation).
+    # Compare date objects to avoid mixing aware/naive datetimes.
+    if timedelta(0) < (thu_date - date_date) <= timedelta(days=14):
         return "pre-tournament"
 
     # Late March counts as pre-tournament too
@@ -632,7 +638,9 @@ def sort_leaderboard(players: List[Dict]) -> List[Dict]:
                 pos = int(pos_str)
             except ValueError:
                 pos = 999
-        score = player.get("score", 999)
+        score = player.get("score")
+        if score is None:
+            score = 999
         return (pos, score)
 
     return sorted(players, key=sort_key)

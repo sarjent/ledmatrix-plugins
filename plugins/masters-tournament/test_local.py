@@ -193,7 +193,13 @@ try:
         def get_green_jacket_icon(self, *a, **kw): return None
         def clear_cache(self): pass
 
-    # Import renderers after stubs are in place
+    # Remove the MagicMock stubs installed for section 3 so the real renderer
+    # modules are imported fresh here (section 3 only needed them to stub out
+    # manager's top-level imports, not for actual rendering).
+    for _m in ["masters_renderer", "masters_renderer_enhanced"]:
+        sys.modules.pop(_m, None)
+
+    # Import real renderers
     from masters_renderer import MastersRenderer
     from masters_renderer_enhanced import MastersRendererEnhanced
 
@@ -201,7 +207,7 @@ try:
     OUT_DIR.mkdir(exist_ok=True)
 
     SIZES = [
-        ("64x32_small",   64,  32, MastersRenderer),
+        ("64x32_small",   64,  32, MastersRendererEnhanced),
         ("128x64_large", 128,  64, MastersRendererEnhanced),
         ("192x48_wide",  192,  48, MastersRendererEnhanced),
     ]

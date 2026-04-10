@@ -394,6 +394,8 @@ class MastersRenderer:
     def _score_color(self, score, position=None) -> Tuple[int, int, int]:
         if position == 1:
             return COLORS["masters_yellow"]
+        if score is None:
+            return COLORS["light_gray"]
         if score < 0:
             return COLORS["under_par"]
         elif score > 0:
@@ -479,7 +481,7 @@ class MastersRenderer:
         # Narrower columns need shorter names.
         name_budget = self.name_len if col_width >= self.width - 4 else max(6, self.name_len - 4)
         name = format_player_name(player.get("player", "?"), name_budget)
-        score = player.get("score", 0)
+        score = player.get("score")
         score_text = format_score_to_par(score)
         position = player.get("position", 99)
         is_leader = (isinstance(position, int) and position == 1) or pos_text == "1"
@@ -634,7 +636,7 @@ class MastersRenderer:
                           self._text_height(draw, country, self.font_detail)) + 2
 
         # Score - big and prominent with spacing
-        score = player.get("score", 0)
+        score = player.get("score")
         score_text = format_score_to_par(score)
 
         if self.tier == "large":
@@ -788,7 +790,7 @@ class MastersRenderer:
         detail_font = _load_font_sized("4x6-font.ttf", detail_px) or self.font_detail
 
         # Reserve the right-hand score block width based on the actual score text.
-        score = player.get("score", 0)
+        score = player.get("score")
         score_text = format_score_to_par(score)
         score_w = self._text_width(draw, score_text, score_font)
         score_h = self._text_height(draw, score_text, score_font)
@@ -1396,8 +1398,8 @@ class MastersRenderer:
         self._draw_header_bar(img, draw, "THE FIELD")
 
         total = len(leaderboard_data)
-        under = sum(1 for p in leaderboard_data if p.get("score", 0) < 0)
-        over = sum(1 for p in leaderboard_data if p.get("score", 0) > 0)
+        under = sum(1 for p in leaderboard_data if (p.get("score") or 0) < 0)
+        over = sum(1 for p in leaderboard_data if (p.get("score") or 0) > 0)
         even = total - under - over
 
         line_h = 10 if self.tier == "large" else 8

@@ -513,7 +513,7 @@ class MastersTournamentPlugin(BasePlugin):
         """Show live alert if enhanced renderer available, else leaderboard."""
         if hasattr(self.renderer, "render_live_alert") and self._leaderboard_data:
             leader = self._leaderboard_data[0]
-            score_label = format_score_to_par(leader.get("score", 0))
+            score_label = format_score_to_par(leader.get("score"))
             return self._show_image(
                 self.renderer.render_live_alert(
                     leader.get("player", ""),
