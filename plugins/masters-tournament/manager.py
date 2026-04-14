@@ -494,7 +494,10 @@ class MastersTournamentPlugin(BasePlugin):
         elif last == 0:
             self._last_hole_advance["featured"] = now
         hole = featured[self._featured_hole_index % len(featured)]
-        return self._show_image(self.renderer.render_hole_card(hole))
+        show_divider = self.config.get("display_modes", {}).get(
+            "course_tour", {}
+        ).get("show_divider", True)
+        return self._show_image(self.renderer.render_hole_card(hole, show_divider=show_divider))
 
     def _display_schedule(self, force_clear: bool) -> bool:
         page = self._advance_page("schedule")
@@ -590,9 +593,12 @@ class MastersTournamentPlugin(BasePlugin):
             if card:
                 cards.append(card)
 
+        show_divider = self.config.get("display_modes", {}).get(
+            "course_tour", {}
+        ).get("show_divider", True)
         for hole in range(1, 19):
             card = self.renderer.render_hole_card(
-                hole, card_width=cw, card_height=ch,
+                hole, card_width=cw, card_height=ch, show_divider=show_divider,
             )
             if card:
                 cards.append(card)
