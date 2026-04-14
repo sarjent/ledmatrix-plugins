@@ -92,10 +92,18 @@ class MastersTournamentPlugin(BasePlugin):
         self._last_update = 0
         self._update_interval = config.get("update_interval", 30)
 
+        # How many days after the final round to keep showing tournament data
+        # before the countdown takes over. Default: 1 day.
+        self._post_tournament_display_days = config.get("post_tournament_display_days", 1)
+
         # Tournament phase — date-driven from live meta when available
         meta_start, meta_end = self._meta_dates()
         self._tournament_phase = get_tournament_phase(start_date=meta_start, end_date=meta_end)
-        self._detailed_phase = get_detailed_phase(start_date=meta_start, end_date=meta_end)
+        self._detailed_phase = get_detailed_phase(
+            start_date=meta_start,
+            end_date=meta_end,
+            post_tournament_display_days=self._post_tournament_display_days,
+        )
 
         # Build enabled modes (phase-aware)
         self.modes = self._build_enabled_modes()
@@ -242,7 +250,11 @@ class MastersTournamentPlugin(BasePlugin):
         proportionally more screen time.
         """
         meta_start, meta_end = self._meta_dates()
-        phase = get_detailed_phase(start_date=meta_start, end_date=meta_end)
+        phase = get_detailed_phase(
+            start_date=meta_start,
+            end_date=meta_end,
+            post_tournament_display_days=self._post_tournament_display_days,
+        )
         phase_modes = self.PHASE_MODES.get(phase, self.PHASE_MODES["off-season"])
 
         # Filter by user config (respect per-mode enabled/disabled)
@@ -301,7 +313,9 @@ class MastersTournamentPlugin(BasePlugin):
         if new_modes != self.modes:
             old_phase = self._detailed_phase
             self._detailed_phase = get_detailed_phase(
-                start_date=meta_start, end_date=meta_end
+                start_date=meta_start,
+                end_date=meta_end,
+                post_tournament_display_days=self._post_tournament_display_days,
             )
             self.modes = new_modes
             self.logger.info(
@@ -628,6 +642,7 @@ class MastersTournamentPlugin(BasePlugin):
         self._page_interval = new_config.get("page_display_duration", 15)
         self._player_card_interval = new_config.get("player_card_duration", 8)
         self._scroll_card_width = new_config.get("scroll_card_width", 128)
+        self._post_tournament_display_days = new_config.get("post_tournament_display_days", 1)
         self._last_hole_advance.clear()
         self._last_page_advance.clear()
         self.modes = self._build_enabled_modes()
