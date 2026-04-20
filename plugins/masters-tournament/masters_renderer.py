@@ -340,6 +340,16 @@ class MastersRenderer:
             self.font_header = _load_font("small")
             self.font_score = _load_font("small")
 
+        # Countdown gets its own font — always the largest that fits the display
+        # height so the number dominates the screen regardless of the tier
+        # overrides above (wide-short panels especially benefit from this).
+        if self.height >= 20:
+            self.font_countdown = _load_font("xl")      # 10px PressStart2P
+        elif self.height >= 14:
+            self.font_countdown = _load_font("medium")  # 8px PressStart2P
+        else:
+            self.font_countdown = _load_font("small")   # 6px 4x6-font
+
     # ═══════════════════════════════════════════════════════════
     # DRAWING HELPERS
     # ═══════════════════════════════════════════════════════════
@@ -1467,14 +1477,14 @@ class MastersRenderer:
                 right_cx = right_x + right_w // 2
 
                 detail_h = self._text_height(draw, "A", self.font_detail)
-                count_h = self._text_height(draw, count_text, self.font_score)
+                count_h = self._text_height(draw, count_text, self.font_countdown)
                 # Big number on top, label underneath
                 block_h = count_h + 3 + detail_h
                 block_y = max(2, (self.height - block_h) // 2)
 
-                cw = self._text_width(draw, count_text, self.font_score)
+                cw = self._text_width(draw, count_text, self.font_countdown)
                 self._text_shadow(draw, (right_cx - cw // 2, block_y),
-                                  count_text, self.font_score, COLORS["masters_yellow"])
+                                  count_text, self.font_countdown, COLORS["masters_yellow"])
 
                 label = unit_text
                 lw = self._text_width(draw, label, self.font_detail)
@@ -1499,7 +1509,7 @@ class MastersRenderer:
         # Position text below logo: label once, then big countdown
         remaining = self.height - logo_bottom
         detail_h = self._text_height(draw, "A", self.font_detail)
-        count_h = self._text_height(draw, count_text, self.font_score)
+        count_h = self._text_height(draw, count_text, self.font_countdown)
 
         if self.tier == "tiny":
             label = "TO MASTERS"
@@ -1509,9 +1519,9 @@ class MastersRenderer:
         text_block_h = count_h + 2 + detail_h
         text_y = logo_bottom + max(0, (remaining - text_block_h) // 2)
 
-        cw = self._text_width(draw, count_text, self.font_score)
+        cw = self._text_width(draw, count_text, self.font_countdown)
         self._text_shadow(draw, ((self.width - cw) // 2, text_y),
-                          count_text, self.font_score, COLORS["masters_yellow"])
+                          count_text, self.font_countdown, COLORS["masters_yellow"])
 
         lw = self._text_width(draw, label, self.font_detail)
         draw.text(((self.width - lw) // 2, text_y + count_h + 2),
