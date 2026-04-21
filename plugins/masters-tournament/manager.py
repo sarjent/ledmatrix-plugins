@@ -709,6 +709,12 @@ class MastersTournamentPlugin(BasePlugin):
                 return None
             meta = self._tournament_meta or {}
             target = meta.get("start_date")
+            # If the cached start_date is already in the past (stale meta from a
+            # prior year), treat it as missing so we fall back to the computed date.
+            if target is not None:
+                t_aware = target if target.tzinfo else target.replace(tzinfo=timezone.utc)
+                if t_aware <= datetime.now(timezone.utc):
+                    target = None
             if target is None:
                 target = self.data_source._computed_fallback_meta().get("start_date")
             if not target:
