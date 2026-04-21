@@ -715,12 +715,11 @@ class MastersTournamentPlugin(BasePlugin):
                 return None
             countdown = calculate_tournament_countdown(target)
             card = self.renderer.render_countdown(
-                countdown["days"], countdown["hours"], countdown["minutes"]
+                countdown["days"], countdown["hours"], countdown["minutes"],
+                card_width=cw, card_height=ch,
             )
             if not card:
                 return None
-            if card.size != (cw, ch):
-                card = card.resize((cw, ch), Image.Resampling.LANCZOS)
             return [card]
 
         # Practice / tournament / post-tournament: leaderboard + holes + fun facts.
