@@ -418,6 +418,7 @@ def get_detailed_phase(
     date: Optional[datetime] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    post_tournament_display_days: int = 1,
 ) -> str:
     """
     Determine detailed tournament phase including time-of-day awareness.
@@ -430,7 +431,8 @@ def get_detailed_phase(
         "tournament-live"     - Tournament day, play in progress (~8am-7pm ET)
         "tournament-evening"  - Tournament day, play finished (~7pm-midnight ET)
         "tournament-overnight"- Tournament day, overnight (midnight-6am ET)
-        "post-tournament"     - Sunday evening / Monday after Masters
+        "post-tournament"     - Sunday evening through N days after Masters
+                                (controlled by post_tournament_display_days)
     """
     date = _to_eastern(date)
 
@@ -451,8 +453,13 @@ def get_detailed_phase(
                 return "tournament-live"
             return "tournament-evening"
 
-        if date > end_e and (date - end_e) <= timedelta(days=1):
-            return "post-tournament"
+        if date > end_e:
+            # Use calendar-day comparison in EDT so post_tournament_display_days
+            # means N full calendar days, not N x 24 hours from the padded end
+            # timestamp (which includes up to +23:59:59 beyond the final play day).
+            days_past = (date.date() - end_e.date()).days
+            if days_past <= post_tournament_display_days:
+                return "post-tournament"
 
         delta = start_e - date
         if timedelta(0) < delta <= timedelta(days=3):
@@ -483,8 +490,8 @@ def get_detailed_phase(
             return "tournament-live"
         return "tournament-evening"
 
-    # Day after the tournament ends (Monday)
-    if date_date == sun_date + timedelta(days=1):
+    # Post-tournament: N days after Sunday
+    if timedelta(0) < (date_date - sun_date) <= timedelta(days=post_tournament_display_days):
         return "post-tournament"
 
     # Practice rounds: Mon-Wed of Masters week
