@@ -18,10 +18,11 @@ Displays projected and live NFL draft picks from ESPN on your LED matrix display
 
 ## Installation
 
-Install directly from the LEDMatrix web UI using the plugin store, or via the GitHub URL:
+Install directly from the LEDMatrix web UI plugin store. The plugin is available in the [ChuckBuilds/ledmatrix-plugins](https://github.com/ChuckBuilds/ledmatrix-plugins) monorepo:
 
-```
-https://github.com/sarjent/ledmatrix-nfl-draft
+```text
+Plugin ID: nfl-draft
+Plugin path: plugins/nfl-draft
 ```
 
 ## Configuration
@@ -50,7 +51,7 @@ https://github.com/sarjent/ledmatrix-nfl-draft
 
 ## Display Layout
 
-```
+```text
 [NFL DRAFT LOGO]  [TEAM LOGO]  Player Name
                                #1  QB  (Indiana)
 ```
@@ -87,4 +88,4 @@ If this plugin is useful to you, consider buying me a coffee!
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or pull request on [GitHub](https://github.com/sarjent/ledmatrix-nfl-draft).
+Contributions are welcome! Please open an issue or pull request on [GitHub](https://github.com/ChuckBuilds/ledmatrix-plugins).

@@ -777,7 +777,7 @@
     {
       "id": "nfl-draft",
       "name": "NFL Draft",
-      "description": "Displays projected and live NFL draft picks from ESPN. Shows Tankathon mock picks pre-draft and switches automatically to live picks when the draft starts. Includes team logos, player name, position, college, On the Clock indicator, and Vegas scroll support.",
+      "description": "Displays projected NFL draft picks from ESPN with live draft tracking support during the annual NFL Draft event. Includes simulate_live mode to replay a completed draft using real ESPN core API data. Shows team logos, player names, positions, and pick numbers in a scrolling display.",
       "author": "ChuckBuilds",
       "category": "sports",
       "tags": [
@@ -785,8 +785,7 @@
         "draft",
         "football",
         "sports",
-        "espn",
-        "live"
+        "espn"
       ],
       "repo": "https://github.com/ChuckBuilds/ledmatrix-plugins",
       "branch": "main",
