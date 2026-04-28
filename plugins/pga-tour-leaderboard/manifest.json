@@ -1,7 +1,7 @@
 {
   "id": "pga-tour-leaderboard",
   "name": "PGA Tour Leaderboard",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Displays the current PGA Tour leaderboard using ESPN data with horizontal scrolling. Shows PGA Tour and Masters logos, tournament info, round status, holes completed, and active players. Falls back to the most recent completed tournament when no event is live. Handles team-format events (e.g. Zurich Classic).",
   "author": "sarjent",
   "class_name": "PGATourLeaderboardPlugin",
@@ -32,19 +32,24 @@
   ],
   "versions": [
     {
+      "version": "1.6.2",
+      "released": "2026-04-26",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
       "version": "1.6.1",
       "released": "2026-04-26",
-      "ledmatrix_min_version": "2.0.0"
+      "ledmatrix_min": "2.0.0"
     },
     {
       "version": "1.6.0",
       "released": "2026-04-21",
-      "ledmatrix_min_version": "2.0.0"
+      "ledmatrix_min": "2.0.0"
     },
     {
       "version": "1.5.0",
       "released": "2026-04-01",
-      "ledmatrix_min_version": "2.0.0"
+      "ledmatrix_min": "2.0.0"
     }
   ],
   "assets": {
