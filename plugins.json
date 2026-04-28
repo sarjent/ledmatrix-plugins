@@ -658,29 +658,6 @@
       "latest_version": "1.2.3"
     },
     {
-      "id": "pga-tour-leaderboard",
-      "name": "PGA Tour Leaderboard",
-      "description": "Displays the PGA Tour leaderboard using ESPN data with horizontal scrolling. Shows tournament info, holes completed, and active players. Falls back to the most recent completed tournament when no event is live.",
-      "author": "sarjent",
-      "category": "sports",
-      "tags": [
-        "golf",
-        "pga",
-        "sports",
-        "leaderboard",
-        "espn"
-      ],
-      "repo": "https://github.com/sarjent/ledmatrix-golf",
-      "branch": "main",
-      "plugin_path": "",
-      "stars": 0,
-      "downloads": 0,
-      "last_updated": "2026-02-26",
-      "verified": false,
-      "screenshot": "",
-      "latest_version": "1.4.8"
-    },
-    {
       "id": "masters-tournament",
       "name": "Masters Tournament",
       "description": "Broadcast-quality Masters Tournament display with real ESPN player headshots, accurate Augusta National hole layouts, fun facts, past champions, live leaderboards, and pixel-perfect LED matrix rendering",

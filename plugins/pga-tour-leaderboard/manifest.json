@@ -1,0 +1,55 @@
+{
+  "id": "pga-tour-leaderboard",
+  "name": "PGA Tour Leaderboard",
+  "version": "1.6.1",
+  "description": "Displays the current PGA Tour leaderboard using ESPN data with horizontal scrolling. Shows PGA Tour and Masters logos, tournament info, round status, holes completed, and active players. Falls back to the most recent completed tournament when no event is live. Handles team-format events (e.g. Zurich Classic).",
+  "author": "sarjent",
+  "class_name": "PGATourLeaderboardPlugin",
+  "entry_point": "manager.py",
+  "display_modes": [
+    "pga_leaderboard"
+  ],
+  "update_interval": 600,
+  "default_duration": 15,
+  "requires_api_key": false,
+  "config_schema": "config_schema.json",
+  "category": "sports",
+  "tags": [
+    "golf",
+    "pga",
+    "sports",
+    "leaderboard",
+    "espn",
+    "masters"
+  ],
+  "icon": "fas fa-golf-ball",
+  "min_display_size": {
+    "width": 64,
+    "height": 32
+  },
+  "compatible_versions": [
+    ">=2.0.0"
+  ],
+  "versions": [
+    {
+      "version": "1.6.1",
+      "released": "2026-04-26",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.6.0",
+      "released": "2026-04-21",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.5.0",
+      "released": "2026-04-01",
+      "ledmatrix_min_version": "2.0.0"
+    }
+  ],
+  "assets": {
+    "uses_core_assets": true,
+    "pga_logos": "assets/sports/pga_logos/"
+  },
+  "license": "MIT"
+}
