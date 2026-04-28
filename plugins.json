@@ -658,6 +658,31 @@
       "latest_version": "1.2.3"
     },
     {
+      "id": "pga-tour-leaderboard",
+      "name": "PGA Tour Leaderboard",
+      "description": "Displays the current PGA Tour leaderboard using ESPN data with horizontal scrolling. Shows PGA Tour and Masters logos, round status, holes completed, and active players. Handles team-format events. Falls back to the most recent completed tournament when no event is live.",
+      "author": "sarjent",
+      "category": "sports",
+      "tags": [
+        "golf",
+        "pga",
+        "sports",
+        "leaderboard",
+        "espn",
+        "masters"
+      ],
+      "repo": "https://github.com/ChuckBuilds/ledmatrix-plugins",
+      "branch": "main",
+      "plugin_path": "plugins/pga-tour-leaderboard",
+      "stars": 0,
+      "downloads": 0,
+      "last_updated": "2026-04-26",
+      "verified": true,
+      "screenshot": "",
+      "latest_version": "1.6.1",
+      "icon": "fas fa-golf-ball"
+    },
+    {
       "id": "masters-tournament",
       "name": "Masters Tournament",
       "description": "Broadcast-quality Masters Tournament display with real ESPN player headshots, accurate Augusta National hole layouts, fun facts, past champions, live leaderboards, and pixel-perfect LED matrix rendering",
