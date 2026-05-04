@@ -1482,14 +1482,24 @@ class MastersRenderer:
                 right_cx = right_x + right_w // 2
 
                 detail_h = self._text_height(draw, "A", self.font_detail)
-                count_h = self._text_height(draw, count_text, self.font_countdown)
+
+                # Fall back to a smaller font if count_text overflows the right column
+                countdown_font = self.font_countdown
+                tw = self._text_width(draw, count_text, countdown_font)
+                if tw > right_w:
+                    countdown_font = self.font_score
+                    tw = self._text_width(draw, count_text, countdown_font)
+                    if tw > right_w:
+                        countdown_font = self.font_detail
+                        tw = self._text_width(draw, count_text, countdown_font)
+
+                count_h = self._text_height(draw, count_text, countdown_font)
                 # Big number on top, label underneath
                 block_h = count_h + 3 + detail_h
                 block_y = max(2, (h - block_h) // 2)
 
-                tw = self._text_width(draw, count_text, self.font_countdown)
                 self._text_shadow(draw, (right_cx - tw // 2, block_y),
-                                  count_text, self.font_countdown, COLORS["masters_yellow"])
+                                  count_text, countdown_font, COLORS["masters_yellow"])
 
                 label = unit_text
                 lw = self._text_width(draw, label, self.font_detail)
