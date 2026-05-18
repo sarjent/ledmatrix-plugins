@@ -74,7 +74,7 @@ for file_path in data_dir.glob('*.json'):
             'enabled': enabled
         })
     except Exception as e:
-        # Skip files that can't be read
+        print(f"Skipping unreadable file {file_path.name}: {e}", file=sys.stderr)
         continue
 
 # Sort by filename
