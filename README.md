@@ -2,7 +2,7 @@
 
 [![Plugins](https://img.shields.io/badge/plugins-30-blue)](./plugins.json)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
-[![Discord](https://img.shields.io/badge/Discord-community-5865F2?logo=discord&logoColor=white)](https://discord.gg/uW36dVAtcT)
+[![Discord](https://img.shields.io/badge/Discord-community-5865F2?logo=discord&logoColor=white)](https://discord.gg/RdrC37rEag)
 [![GitHub Stars](https://img.shields.io/github/stars/ChuckBuilds/ledmatrix-plugins?style=flat&color=yellow)](https://github.com/ChuckBuilds/ledmatrix-plugins)
 
 > Official plugin repository for [LEDMatrix](https://github.com/ChuckBuilds/LEDMatrix) &middot; [Installation](#quick-install) &middot; [Plugins](#available-plugins) &middot; [Development](#3rd-party-plugin-development) &middot; [Support](#support--community)
